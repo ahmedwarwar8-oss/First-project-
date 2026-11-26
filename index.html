@@ -136,7 +136,7 @@ async function load(){
 // ---------- rendering ----------
 function render(){
   urls.forEach(URL.revokeObjectURL);urls=[];
-  $("#t-gal").className=view==="gal"?"on":"";$("#t-home").className=view==="home"||view==="setup"?"on":"";$("#t-cmp").className=view==="cmp"?"on":"";$("#t-wk").className=view==="wk"?"on":"";$("#t-prog").className=view==="prog"?"on":"";$("#t-bw").className=view==="bw"?"on":"";
+  $("#t-gal").className=view==="gal"?"on":"";$("#t-home").className=view==="home"?"on":"";$("#t-cmp").className=view==="cmp"?"on":"";$("#t-wk").className=view==="wk"?"on":"";$("#t-prog").className=view==="prog"?"on":"";$("#t-bw").className=view==="bw"?"on":"";
   const m=$("#main");if(view==="wk"){renderWk(m);return}if(view==="prog"){renderProg(m);return}if(view==="bw"){renderBw(m);return}if(view==="home"){renderHome(m);return}if(view==="settings"){renderSettings(m);return}if(view==="editex"){renderEditEx(m);return}if(view==="setup"){renderSetup(m);return}
   if(view==="gal"){
     m.innerHTML=(ok?"":`<div class="note" style="color:var(--accent);margin:0 0 10px">⚠️ This browser is blocking local storage, so photos will disappear when you close the app. Try opening the link directly in Safari rather than inside another app.</div>`)+`<div style="margin:8px 0 12px"><label class="btn" for="file" style="display:block;text-align:center">+ Add photos</label></div>`+
@@ -394,7 +394,7 @@ function renderHome(m){
   const dv=last&&prev?last.v-prev.v:0;
   m.innerHTML=`<div class="sub">${new Date().toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"})}</div>
   <h2 style="margin:2px 0 12px;font-size:24px">${gr}${logs._profile&&logs._profile.name?", "+esc(logs._profile.name):""} 👋</h2>
-  ${logs._sched?"":`<div class="ex"><b>Set up your week</b><div class="meta">Choose your workout and rest days.</div><button class="btn" id="su2" style="margin-top:8px">Set up now</button></div>`}<div class="ex"><div class="meta">TODAY</div><h3 style="font-size:20px;margin:2px 0">${ss.t}</h3>
+  <div class="ex"><div class="meta">TODAY</div><h3 style="font-size:20px;margin:2px 0">${ss.t}</h3>
   ${rest?`<div class="meta">${sid==="REST"?"Recover, eat well and sleep.":"No exercises yet. Add some in Settings → Edit exercises."}</div>`:`<div class="meta">${ss.x.length} exercises · ${nsets} sets${started?" · in progress":""}</div><button class="btn" id="go" style="margin-top:10px">${started?"Continue workout":"Start workout"}</button>`}</div>
   <div class="ex"><div class="exh"><h3>Week ${wkWeek}</h3><span class="meta">${done}/${planned.length} sessions done</span></div>
   <div class="days">${DAYS.map((d,i)=>{const s=sched[d]||"REST",st=s==="REST"?"rs":sessDone(s)?"dn":"pl";
@@ -405,26 +405,25 @@ function renderHome(m){
    <div class="stat" data-go="gal"><div class="l">Photos</div><div class="v">${photos.length}</div><div class="l">${photos.length?"Latest "+fmt(photos[photos.length-1].date):"Tap to add"}</div></div>
    <div class="stat" data-go="prog"><div class="l">Progress</div><div class="v">📈</div><div class="l">View lift charts</div></div></div>`;
   const go=()=>{wkDay=di;view="wk";render()};
-  if($("#su2"))$("#su2").onclick=()=>{draft=null;view="setup";render()};
   if($("#go"))$("#go").onclick=go;
   m.querySelectorAll(".dd").forEach(b=>b.onclick=()=>{wkDay=+b.dataset.i;view="wk";render()});
   m.querySelectorAll(".stat").forEach(b=>b.onclick=()=>{view=b.dataset.go;render()});
 }
 function renderSetup(m){
-  const first=!logs._sched;if(!draft)draft={...sched};
+  if(!draft)draft={...sched};
   const opts=["REST",...BASE,"CUSTOM"];
-  m.innerHTML=`<h2 style="margin:6px 0 4px;font-size:22px">${first?"Set up your week":"Customise your week"}</h2>
-  <div class="sub" style="margin-bottom:12px">${first?"Welcome! Choose what you train each day and which days are rest. ":""}Each session can be used once a week. Picking one that’s already used swaps the two days.</div>
+  m.innerHTML=`<h2 style="margin:6px 0 4px;font-size:22px">Set up your week</h2>
+  <div class="sub" style="margin-bottom:12px">Choose what you train each day and which days are rest. Each session can be used once a week. Picking one that’s already used swaps the two days.</div>
   <div class="ex">${DAYS.map((d,i)=>`<div class="row" style="align-items:center"><div style="flex:1;font-weight:600">${FULL[i]}</div>
    <select data-d="${d}" style="flex:1.5">${opts.map(o=>`<option value="${o}" ${draft[d]===o||(o==="CUSTOM"&&String(draft[d]).startsWith("C_"))?"selected":""}>${o==="REST"?"Rest day":o==="CUSTOM"?"Custom workout":PLAN[o].t}</option>`).join("")}</select></div>`).join("")}</div>
-  <button class="btn" id="ss">${first?"Save & continue":"Save"}</button>
-  ${first?"":`<button class="btn alt" id="sc" style="margin-top:8px">Cancel</button>`}`;
+  <button class="btn" id="ss">Save</button>
+  <button class="btn alt" id="sc" style="margin-top:8px">Cancel</button>`;
   m.querySelectorAll("select[data-d]").forEach(el=>el.onchange=()=>{
     const d=el.dataset.d,v=el.value==="CUSTOM"?"C_"+d:el.value;
     if(v!=="REST"&&!v.startsWith("C_"))DAYS.forEach(o=>{if(o!==d&&draft[o]===v)draft[o]=draft[d]});
     draft[d]=v;render()});
-  $("#ss").onclick=async()=>{sched={...draft};await wPut({k:"_sched",s:sched});Object.values(sched).forEach(id=>{if(id!=="REST"&&!PLAN[id])PLAN[id]={t:"Custom workout",x:[]}});await savePlan();draft=null;view="home";render()};
-  if($("#sc"))$("#sc").onclick=()=>{draft=null;view="home";render()};
+  $("#ss").onclick=async()=>{sched={...draft};await wPut({k:"_sched",s:sched});Object.values(sched).forEach(id=>{if(id!=="REST"&&!PLAN[id])PLAN[id]={t:"Custom workout",x:[]}});await savePlan();draft=null;view="settings";render()};
+  $("#sc").onclick=()=>{draft=null;view="settings";render()};
 }
 
 // ---------- settings ----------
@@ -436,7 +435,7 @@ function renderSettings(m){
   ${fld("Name","pn",pf.name,"Your name")}
   <div class="row" style="margin:0"><div style="flex:1">${fld("Age","pa",pf.age,"e.g. 28","numeric")}</div><div style="flex:1">${fld("Height (cm)","ph",pf.height,"e.g. 180","decimal")}</div></div>
   <label>Gender</label><div class="chips" style="flex-wrap:wrap">${["Male","Female","Other","Prefer not to say"].map(g=>`<button class="chip ${pf.gender===g?"on":""}" data-g="${g}">${g}</button>`).join("")}</div></div>
-  <button class="btn alt" id="cw">⚙︎ Customise workout days</button>
+  <button class="btn alt" id="cw">📅 Set up your week</button>
   <button class="btn alt" id="ee" style="margin-top:8px">✏️ Edit exercises</button>
   <button class="btn" id="bk" style="margin-top:8px">Done</button>
   <p class="note">All measurements are metric: weights in kilograms (kg), height in centimetres (cm). Your details are stored only on this device and are never uploaded.</p>`;
@@ -475,7 +474,7 @@ function renderEditEx(m){
   const sid=sess(exDay),ss=PLAN[sid],rest=sid==="REST";
   let h=`<h2 style="margin:6px 0 4px;font-size:22px">Edit exercises</h2><div class="sub" style="margin-bottom:8px">Add, remove or reorder the exercises for each day.</div>
   <div class="chips">${DAYS.map((d,i)=>`<button class="chip ${i===exDay?"on":""}" data-i="${i}">${d[0]+d.slice(1).toLowerCase()}</button>`).join("")}</div>`;
-  if(rest)h+=`<div class="ex"><b>${FULL[exDay]} is a rest day</b><div class="meta">Set this day to a workout first, then you can add exercises.</div><button class="btn alt" id="cw2" style="margin-top:8px">Customise workout days</button></div>`;
+  if(rest)h+=`<div class="ex"><b>${FULL[exDay]} is a rest day</b><div class="meta">Set this day to a workout first, then you can add exercises.</div><button class="btn alt" id="cw2" style="margin-top:8px">Set up your week</button></div>`;
   else{
     h+=`<h2>${esc(ss.t)}</h2>`;
     if(sid.startsWith("C_"))h+=`<div style="margin-bottom:10px"><label>Workout name</label><input type="text" id="wn" value="${esc(ss.t)}"></div>`;

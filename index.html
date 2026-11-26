@@ -105,9 +105,6 @@ nav button i{display:flex;justify-content:center;font-style:normal;margin-bottom
 .shd{position:sticky;top:-16px;margin:-16px -16px 0;padding:16px 16px 8px;background:var(--bg);z-index:1}
 .shr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .shr h2{margin:0}
-.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;margin:4px 0 12px}
-.seg button{flex:1;border:0;background:none;color:var(--muted);font-weight:600;font-size:14px;font-family:inherit;padding:9px 0;border-radius:9px}
-.seg button.on{background:var(--accent);color:#fff}
 </style>
 </head>
 <body>
@@ -158,7 +155,6 @@ function render(){
   urls.forEach(URL.revokeObjectURL);urls=[];
   $("#t-gal").className=view==="gal"||view==="cmp"?"on":"";$("#t-home").className=view==="home"?"on":"";$("#t-wk").className=view==="wk"?"on":"";$("#t-prog").className=view==="prog"?"on":"";$("#t-bw").className=view==="bw"?"on":"";
   const m=$("#main");if(view==="wk"){renderWk(m);return}if(view==="prog"){renderProg(m);return}if(view==="bw"){renderBw(m);return}if(view==="home"){renderHome(m);return}if(view==="settings"){renderSettings(m);return}if(view==="editex"){renderEditEx(m);return}if(view==="setup"){renderSetup(m);return}
-  const seg=`<div class="seg"><button data-pv="gal" class="${view==="gal"?"on":""}">Gallery</button><button data-pv="cmp" class="${view==="cmp"?"on":""}">Compare</button></div>`;
   if(view!=="gal")pick=null;
   if(view==="gal"){
     const picking=!!pick,warn=ok?"":`<div class="note" style="color:var(--accent);margin:0 0 10px">This browser is blocking local storage, so photos will disappear when you close the app. Try opening the link directly in Safari rather than inside another app.</div>`;
@@ -166,7 +162,7 @@ function render(){
       ?`<div class="ex pickbar"><div><b>Select 2 photos</b><div class="meta">${pick.length}/2 selected · older photo goes on the left</div></div><button class="chip" id="pcx">Cancel</button></div>
         <button class="btn" id="pgo" ${pick.length===2?"":"disabled"} style="margin-bottom:12px">Compare selected</button>`
       :`<div class="row" style="margin:8px 0 12px"><label class="btn" for="file" style="display:block;text-align:center">+ Add photos</label>${photos.length>=2?`<button class="btn alt" id="psel">Select to compare</button>`:""}</div>`;
-    m.innerHTML=seg+warn+top+
+    m.innerHTML=warn+top+
     (photos.length?`<div class="grid">${photos.map(p=>{const i=picking?pick.indexOf(p.id):-1;
       return `<div class="th ${i>=0?"picked":""} ${picking&&i<0?"dim":""}" data-id="${p.id}"><img src="${urlOf(p)}" alt="">${i>=0?`<b class="pk">${i+1}</b>`:""}<span>${nm(p)}</span></div>`}).join("")}</div>`
     :`<div class="empty">No photos yet.<br>Add your first weekly photo to get started.</div>`)+
@@ -179,18 +175,15 @@ function render(){
     if($("#pgo"))$("#pgo").onclick=()=>{const [x,y]=pick.map(id=>photos.find(p=>p.id===id)).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.id-b.id);
       selA=x.id;selB=y.id;pick=null;view="cmp";render()};
   }else{
-    if(photos.length<2){m.innerHTML=seg+`<div class="empty">Add at least two photos to compare them.</div>`;return}
-    const opt=id=>photos.map(p=>`<option value="${p.id}" ${p.id===id?"selected":""}>${nm(p)}</option>`).join("");
+    if(photos.length<2){view="gal";render();return}
     const a=photos.find(p=>p.id===selA),b=photos.find(p=>p.id===selB);
-    m.innerHTML=seg+`<div class="cmp" id="cmp">
+    m.innerHTML=`<div class="shr" style="margin:4px 0 12px"><button class="chip" id="cback">‹ Back</button><h2>Compare</h2></div><div class="cmp" id="cmp">
       <img id="base" src="${urlOf(b)}" alt=""><img id="top" src="${urlOf(a)}" alt="">
       <div class="tag" style="left:10px" id="tagA">${nm(a)}</div><div class="tag" style="right:10px" id="tagB">${nm(b)}</div>
       <div class="bar" id="bar"><div class="knob">⇆</div></div></div>
-      <div class="row"><div style="flex:1"><label>Left (before)</label><select id="sa">${opt(selA)}</select></div>
-      <div style="flex:1"><label>Right (after)</label><select id="sb">${opt(selB)}</select></div></div>
-      <button class="btn alt" id="swap">Swap sides</button>`;
-    $("#sa").onchange=e=>{selA=+e.target.value;render()};
-    $("#sb").onchange=e=>{selB=+e.target.value;render()};
+      <div class="row"><button class="btn alt" id="swap">Swap sides</button><button class="btn" id="cnew">Pick other photos</button></div>`;
+    $("#cback").onclick=()=>{view="gal";render()};
+    $("#cnew").onclick=()=>{view="gal";pick=[];render()};
     $("#swap").onclick=()=>{[selA,selB]=[selB,selA];render()};
     setPos(pos);
     const box=$("#cmp");let drag=false;
@@ -207,7 +200,6 @@ function openSheet(id){
   $("#sheet").innerHTML=`<img src="${urlOf(p)}" alt="">
     <div class="row"><div style="flex:1"><label>Label</label><input type="text" id="lb" value="${(p.label||"").replace(/"/g,"&quot;")}" placeholder="e.g. Week 4"></div>
     <div style="flex:1"><label>Date</label><input type="date" id="dt" value="${p.date}"></div></div>
-    <div class="row"><button class="btn alt" id="sA">Set as left</button><button class="btn alt" id="sB">Set as right</button></div>
     <div class="row"><button class="btn" id="sv">Save</button></div>
     <div class="row"><button class="btn del" id="dl">Delete photo</button></div>
     <div class="row"><button class="btn alt" id="cl">Close</button></div>`;
@@ -215,8 +207,6 @@ function openSheet(id){
   const close=()=>{$("#modal").classList.remove("on")};
   $("#cl").onclick=close;
   $("#sv").onclick=async()=>{p.label=$("#lb").value.trim();p.date=$("#dt").value||p.date;await pPut(p);close();load()};
-  $("#sA").onclick=()=>{selA=id;view="cmp";close();render()};
-  $("#sB").onclick=()=>{selB=id;view="cmp";close();render()};
   let armed=false;$("#dl").onclick=async()=>{if(!armed){armed=true;$("#dl").textContent="Tap again to confirm delete";$("#dl").style.background="var(--accent)";$("#dl").style.color="#fff";return}await pDel(id);close();load()};
 }
 $("#modal").onclick=e=>{if(e.target.id==="modal")$("#modal").classList.remove("on")};
@@ -556,7 +546,6 @@ function renderEditEx(m){
 
 // ---------- events ----------
 $("#t-gal").onclick=()=>{view="gal";render()};
-$("#main").addEventListener("click",e=>{const b=e.target.closest("[data-pv]");if(b){view=b.dataset.pv;render()}});
 $("#t-wk").onclick=()=>{view="wk";render()};
 $("#t-prog").onclick=()=>{view="prog";render()};
 $("#t-bw").onclick=()=>{view="bw";render()};

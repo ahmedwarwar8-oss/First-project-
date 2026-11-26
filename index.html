@@ -88,6 +88,9 @@ nav button i{display:block;font-style:normal;font-size:19px;line-height:1.1;marg
 .stat .v{font-size:22px;font-weight:700;margin:2px 0}
 .stat .l{font-size:12px;color:var(--muted)}
 .mv,.rmx{padding:4px 10px;font-size:12px}
+.shd{position:sticky;top:-16px;margin:-16px -16px 0;padding:16px 16px 8px;background:var(--bg);z-index:1}
+.shr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.shr h2{margin:0}
 .seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;margin:4px 0 12px}
 .seg button{flex:1;border:0;background:none;color:var(--muted);font-weight:600;font-size:14px;font-family:inherit;padding:9px 0;border-radius:9px}
 .seg button.on{background:var(--accent);color:#fff}
@@ -296,7 +299,7 @@ const esc=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g
 function wDel(k){delete logs[k];return new Promise(res=>{if(!hasW()){delete lmem[k];return res()}const q=db.transaction("w","readwrite").objectStore("w").delete(k);q.onsuccess=q.onerror=()=>res()})}
 function openSwap(dn,slot){
   const k=`sub|${dn}|${slot}`,close=()=>$("#modal").classList.remove("on");
-  $("#sheet").innerHTML=`<h2 style="margin-top:0">Swap exercise</h2><input type="text" id="sq" placeholder="Search, or type your own" autocomplete="off"><div id="sl" style="margin-top:8px"></div>
+  $("#sheet").innerHTML=`<div class="shd"><div class="shr"><button class="chip" id="back">‹ Back</button><h2>Swap exercise</h2></div><input type="text" id="sq" placeholder="Search, or type your own" autocomplete="off"></div><div id="sl" style="margin-top:8px"></div>
   <div class="row"><button class="btn alt" id="sr">Reset to program</button></div><div class="row"><button class="btn alt" id="sx">Cancel</button></div>`;
   $("#modal").classList.add("on");
   const draw=()=>{const q=$("#sq").value.trim(),ql=q.toLowerCase();let h=q?`<button class="opt" data-n="${esc(q)}">Use “${esc(q)}”</button>`:"";
@@ -306,7 +309,7 @@ function openSwap(dn,slot){
   $("#sq").oninput=draw;draw();
   $("#sl").onclick=async e=>{const b=e.target.closest(".opt");if(b){await wPut({k,name:b.dataset.n});close();render()}};
   $("#sr").onclick=async()=>{await wDel(k);close();render()};
-  $("#sx").onclick=close;
+  $("#sx").onclick=$("#back").onclick=close;
 }
 
 // ---------- progress ----------
@@ -452,7 +455,7 @@ function applyPlan(){
   for(const id in p.ex){if(!PLAN[id])PLAN[id]={t:"Custom workout",x:[]};PLAN[id].x=p.ex[id];if(p.t&&p.t[id])PLAN[id].t=p.t[id]}
 }
 function pickEx(cb){
-  $("#sheet").innerHTML=`<h2 style="margin-top:0">Add exercise</h2><input type="text" id="sq" placeholder="Search, or type your own" autocomplete="off"><div id="sl" style="margin-top:8px"></div><div class="row"><button class="btn alt" id="sx">Cancel</button></div>`;
+  $("#sheet").innerHTML=`<div class="shd"><div class="shr"><button class="chip" id="back">‹ Back</button><h2>Add exercise</h2></div><input type="text" id="sq" placeholder="Search, or type your own" autocomplete="off"></div><div id="sl" style="margin-top:8px"></div><div class="row"><button class="btn alt" id="sx">Cancel</button></div>`;
   $("#modal").classList.add("on");
   const close=()=>$("#modal").classList.remove("on");
   const draw=()=>{const q=$("#sq").value.trim().replace(/\|/g,"/"),ql=q.toLowerCase();let h=q?`<button class="opt" data-n="${esc(q)}">Use “${esc(q)}”</button>`:"";
@@ -461,7 +464,7 @@ function pickEx(cb){
     $("#sl").innerHTML=h};
   $("#sq").oninput=draw;draw();
   $("#sl").onclick=e=>{const b=e.target.closest(".opt");if(b){close();cb(b.dataset.n)}};
-  $("#sx").onclick=close;
+  $("#sx").onclick=$("#back").onclick=close;
 }
 function renderEditEx(m){
   const sid=sess(exDay),ss=PLAN[sid],rest=sid==="REST";

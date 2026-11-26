@@ -89,6 +89,11 @@ nav button i{display:flex;justify-content:center;font-style:normal;margin-bottom
 .stat .v{font-size:22px;font-weight:700;margin:2px 0}
 .stat .l{font-size:12px;color:var(--muted)}
 .mv,.rmx{padding:4px 10px;font-size:12px}
+.wbar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:10px 0}
+.wbar div{height:100%;background:#2b8fd6;border-radius:6px;transition:width .3s}
+.wbtns{display:flex;gap:8px}
+.wbtns .chip{flex:1;text-align:center}
+.chip:disabled{opacity:.4}
 .shd{position:sticky;top:-16px;margin:-16px -16px 0;padding:16px 16px 8px;background:var(--bg);z-index:1}
 .shr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .shr h2{margin:0}
@@ -404,6 +409,7 @@ function renderHome(m){
   <h2 style="margin:2px 0 12px;font-size:24px">${gr}</h2>
   <div class="ex"><div class="meta">TODAY</div><h3 style="font-size:20px;margin:2px 0">${ss.t}</h3>
   ${rest?`<div class="meta">${sid==="REST"?"Recover, eat well and sleep.":"No exercises yet. Add some in Settings → Edit exercises."}</div>`:`<div class="meta">${ss.x.length} exercises · ${nsets} sets${started?" · in progress":""}</div><button class="btn" id="go" style="margin-top:10px">${started?"Continue workout":"Start workout"}</button>`}</div>
+${waterCard()}
   <div class="ex"><div class="exh"><h3>Week ${wkWeek}</h3><span class="meta">${done}/${planned.length} sessions done</span></div>
   <div class="days">${DAYS.map((d,i)=>{const s=sched[d]||"REST",st=s==="REST"?"rs":sessDone(s)?"dn":"pl";
     return `<button class="dd ${st} ${i===di?"td":""}" data-i="${i}"><span>${d[0]+d.slice(1).toLowerCase()}</span><b>${st==="dn"?"✓":st==="rs"?"R":AB[s]||"•"}</b></button>`}).join("")}</div></div>
@@ -412,6 +418,7 @@ function renderHome(m){
    <div class="stat" data-go="wk"><div class="l">This week</div><div class="v">${done}/${planned.length}</div><div class="l">workouts done</div></div>
    <div class="stat" data-go="gal"><div class="l">Photos</div><div class="v">${photos.length}</div><div class="l">${photos.length?"Latest "+fmt(photos[photos.length-1].date):"Tap to add"}</div></div>
    <div class="stat" data-go="prog"><div class="l">Progress</div><div class="v">${Object.keys(progData()).length}</div><div class="l">lifts tracked</div></div></div>`;
+  wireWater(m);
   const go=()=>{wkDay=di;view="wk";render()};
   if($("#go"))$("#go").onclick=go;
   m.querySelectorAll(".dd").forEach(b=>b.onclick=()=>{wkDay=+b.dataset.i;view="wk";render()});
@@ -434,13 +441,28 @@ function renderSetup(m){
   $("#sc").onclick=()=>{draft=null;view="settings";render()};
 }
 
+// ---------- water ----------
+const localDay=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const waterGoal=()=>logs._water&&logs._water.goal||3000;
+const litres=ml=>(Math.round(ml/50)/20).toLocaleString(undefined,{maximumFractionDigits:2})+" L";
+function waterCard(){
+  const k="water|"+localDay(),ml=logs[k]?logs[k].ml:0,g=waterGoal(),pc=Math.min(100,Math.round(ml/g*100));
+  return `<div class="ex"><div class="exh"><h3>Water</h3><span class="meta">${pc}% of daily goal</span></div>
+  <div style="font-size:22px;font-weight:700;margin-top:4px">${litres(ml)} <span class="meta" style="font-size:14px;font-weight:400">of ${litres(g)}</span></div>
+  <div class="wbar"><div style="width:${pc}%"></div></div>
+  <div class="wbtns"><button class="chip" data-ml="250">+250 ml</button><button class="chip" data-ml="500">+500 ml</button><button class="chip" data-ml="-250" ${ml?"":"disabled"}>Undo</button></div></div>`}
+function wireWater(m){m.querySelectorAll("[data-ml]").forEach(b=>b.onclick=async()=>{
+  const d=localDay(),k="water|"+d,cur=logs[k]?logs[k].ml:0;await wPut({k,d,ml:Math.max(0,cur+ +b.dataset.ml)});render()})}
+
 // ---------- settings ----------
 function renderSettings(m){
   m.innerHTML=`<h2 style="margin:6px 0 10px;font-size:22px">Settings</h2>
+  <div class="ex"><h3>Water</h3><div style="margin-top:8px"><label>Daily goal (ml)</label><input type="text" inputmode="numeric" id="wg" value="${waterGoal()}" placeholder="e.g. 3000"></div></div>
   <button class="btn alt" id="cw">Set up your week</button>
   <button class="btn alt" id="ee" style="margin-top:8px">Edit exercises</button>
   <button class="btn" id="bk" style="margin-top:8px">Done</button>
   <p class="note">Everything stays on this device only. Nothing is ever uploaded.<br>All weights are in kilograms (kg).</p>`;
+  $("#wg").onchange=async e=>{const g=Math.min(10000,Math.max(250,parseInt(e.target.value)||3000));e.target.value=g;await wPut({k:"_water",goal:g})};
   $("#cw").onclick=()=>{draft=null;view="setup";render()};
   $("#ee").onclick=()=>{view="editex";render()};
   $("#bk").onclick=()=>{view="home";render()};

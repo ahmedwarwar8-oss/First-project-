@@ -447,22 +447,38 @@ const waterGoal=()=>logs._water&&logs._water.goal||3000;
 const litres=ml=>(Math.round(ml/50)/20).toLocaleString(undefined,{maximumFractionDigits:2})+" L";
 function waterCard(){
   const k="water|"+localDay(),ml=logs[k]?logs[k].ml:0,g=waterGoal(),pc=Math.min(100,Math.round(ml/g*100));
-  return `<div class="ex"><div class="exh"><h3>Water</h3><span class="meta">${pc}% of daily goal</span></div>
-  <div style="font-size:22px;font-weight:700;margin-top:4px">${litres(ml)} <span class="meta" style="font-size:14px;font-weight:400">of ${litres(g)}</span></div>
+  return `<div class="ex"><div class="exh"><h3>Water</h3><button class="chip swap" id="wgoal">Set goal</button></div>
+  <div style="font-size:22px;font-weight:700;margin-top:4px">${litres(ml)} <span class="meta" style="font-size:14px;font-weight:400">of ${litres(g)} · ${pc}%</span></div>
   <div class="wbar"><div style="width:${pc}%"></div></div>
-  <div class="wbtns"><button class="chip" data-ml="250">+250 ml</button><button class="chip" data-ml="500">+500 ml</button><button class="chip" data-ml="-250" ${ml?"":"disabled"}>Undo</button></div></div>`}
-function wireWater(m){m.querySelectorAll("[data-ml]").forEach(b=>b.onclick=async()=>{
-  const d=localDay(),k="water|"+d,cur=logs[k]?logs[k].ml:0;await wPut({k,d,ml:Math.max(0,cur+ +b.dataset.ml)});render()})}
+  <div class="wbtns"><button class="chip" data-ml="600">+600 ml</button><button class="chip" data-ml="1000">+1 L</button><button class="chip" id="wundo" ${ml?"":"disabled"}>Undo</button></div></div>`}
+async function setWaterGoal(v){const g=Math.round(Math.min(10,Math.max(0.25,num(v)||3))*1000);await wPut({k:"_water",goal:g});return g}
+function openWaterGoal(){
+  const close=()=>$("#modal").classList.remove("on");
+  $("#sheet").innerHTML=`<div class="shr"><button class="chip" id="back">‹ Back</button><h2>Daily water goal</h2></div>
+  <label>Goal (litres)</label><input type="text" inputmode="decimal" id="wgi" value="${waterGoal()/1000}" placeholder="e.g. 3.5">
+  <div class="row"><button class="btn" id="wgs">Save</button></div>`;
+  $("#modal").classList.add("on");setTimeout(()=>$("#wgi").focus(),50);
+  $("#back").onclick=close;
+  $("#wgs").onclick=async()=>{await setWaterGoal($("#wgi").value);close();render()};
+}
+function wireWater(m){
+  const d=localDay(),k="water|"+d,rec=()=>logs[k]||{k,d,ml:0,adds:[]};
+  m.querySelectorAll("[data-ml]").forEach(b=>b.onclick=async()=>{const r=rec(),n=+b.dataset.ml;
+    await wPut({k,d,ml:r.ml+n,adds:[...(r.adds||[]),n]});render()});
+  const u=m.querySelector("#wundo");if(u)u.onclick=async()=>{const r=rec(),adds=[...(r.adds||[])],last=adds.pop()||r.ml;
+    await wPut({k,d,ml:Math.max(0,r.ml-last),adds});render()};
+  const g=m.querySelector("#wgoal");if(g)g.onclick=openWaterGoal;
+}
 
 // ---------- settings ----------
 function renderSettings(m){
   m.innerHTML=`<h2 style="margin:6px 0 10px;font-size:22px">Settings</h2>
-  <div class="ex"><h3>Water</h3><div style="margin-top:8px"><label>Daily goal (ml)</label><input type="text" inputmode="numeric" id="wg" value="${waterGoal()}" placeholder="e.g. 3000"></div></div>
+  <div class="ex"><h3>Water</h3><div style="margin-top:8px"><label>Daily goal (litres)</label><input type="text" inputmode="decimal" id="wg" value="${waterGoal()/1000}" placeholder="e.g. 3.5"></div></div>
   <button class="btn alt" id="cw">Set up your week</button>
   <button class="btn alt" id="ee" style="margin-top:8px">Edit exercises</button>
   <button class="btn" id="bk" style="margin-top:8px">Done</button>
   <p class="note">Everything stays on this device only. Nothing is ever uploaded.<br>All weights are in kilograms (kg).</p>`;
-  $("#wg").onchange=async e=>{const g=Math.min(10000,Math.max(250,parseInt(e.target.value)||3000));e.target.value=g;await wPut({k:"_water",goal:g})};
+  $("#wg").onchange=async e=>{e.target.value=(await setWaterGoal(e.target.value))/1000};
   $("#cw").onclick=()=>{draft=null;view="setup";render()};
   $("#ee").onclick=()=>{view="editex";render()};
   $("#bk").onclick=()=>{view="home";render()};

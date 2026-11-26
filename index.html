@@ -393,7 +393,7 @@ function renderHome(m){
   const hr=new Date().getHours(),gr=hr<12?"Good morning":hr<18?"Good afternoon":"Good evening";
   const dv=last&&prev?last.v-prev.v:0;
   m.innerHTML=`<div class="sub">${new Date().toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"})}</div>
-  <h2 style="margin:2px 0 12px;font-size:24px">${gr}${logs._profile&&logs._profile.name?", "+esc(logs._profile.name):""} 👋</h2>
+  <h2 style="margin:2px 0 12px;font-size:24px">${gr} 👋</h2>
   <div class="ex"><div class="meta">TODAY</div><h3 style="font-size:20px;margin:2px 0">${ss.t}</h3>
   ${rest?`<div class="meta">${sid==="REST"?"Recover, eat well and sleep.":"No exercises yet. Add some in Settings → Edit exercises."}</div>`:`<div class="meta">${ss.x.length} exercises · ${nsets} sets${started?" · in progress":""}</div><button class="btn" id="go" style="margin-top:10px">${started?"Continue workout":"Start workout"}</button>`}</div>
   <div class="ex"><div class="exh"><h3>Week ${wkWeek}</h3><span class="meta">${done}/${planned.length} sessions done</span></div>
@@ -432,16 +432,13 @@ function renderSettings(m){
   const fld=(l,id,v,ph,im)=>`<div style="margin-bottom:10px"><label>${l}</label><input type="text" id="${id}" ${im?`inputmode="${im}"`:""} placeholder="${ph}" autocomplete="off" value="${esc(v||"")}"></div>`;
   m.innerHTML=`<h2 style="margin:6px 0 10px;font-size:22px">Settings</h2>
   <div class="ex"><h3 style="margin-bottom:10px">Profile</h3>
-  ${fld("Name","pn",pf.name,"Your name")}
-  <div class="row" style="margin:0"><div style="flex:1">${fld("Age","pa",pf.age,"e.g. 28","numeric")}</div><div style="flex:1">${fld("Height (cm)","ph",pf.height,"e.g. 180","decimal")}</div></div>
+  ${fld("Height (cm)","ph",pf.height,"e.g. 180","decimal")}
   <label>Gender</label><div class="chips" style="flex-wrap:wrap">${["Male","Female","Other","Prefer not to say"].map(g=>`<button class="chip ${pf.gender===g?"on":""}" data-g="${g}">${g}</button>`).join("")}</div></div>
   <button class="btn alt" id="cw">📅 Set up your week</button>
   <button class="btn alt" id="ee" style="margin-top:8px">✏️ Edit exercises</button>
   <button class="btn" id="bk" style="margin-top:8px">Done</button>
   <p class="note">All measurements are metric: weights in kilograms (kg), height in centimetres (cm). Your details are stored only on this device and are never uploaded.</p>`;
   const sv=(k,v)=>{pf[k]=v;wPut(pf)};
-  $("#pn").oninput=e=>sv("name",e.target.value.trim());
-  $("#pa").oninput=e=>sv("age",e.target.value.replace(/\D/g,"").slice(0,3));
   $("#ph").oninput=e=>sv("height",e.target.value.trim());
   m.querySelectorAll(".chip[data-g]").forEach(b=>b.onclick=()=>{sv("gender",pf.gender===b.dataset.g?"":b.dataset.g);render()});
   $("#cw").onclick=()=>{draft=null;view="setup";render()};

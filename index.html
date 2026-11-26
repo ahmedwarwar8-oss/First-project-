@@ -145,9 +145,9 @@ function render(){
   urls.forEach(URL.revokeObjectURL);urls=[];
   $("#t-gal").className=view==="gal"||view==="cmp"?"on":"";$("#t-home").className=view==="home"?"on":"";$("#t-wk").className=view==="wk"?"on":"";$("#t-prog").className=view==="prog"?"on":"";$("#t-bw").className=view==="bw"?"on":"";
   const m=$("#main");if(view==="wk"){renderWk(m);return}if(view==="prog"){renderProg(m);return}if(view==="bw"){renderBw(m);return}if(view==="home"){renderHome(m);return}if(view==="settings"){renderSettings(m);return}if(view==="editex"){renderEditEx(m);return}if(view==="setup"){renderSetup(m);return}
-  const seg=`<div class="seg"><button data-pv="gal" class="${view==="gal"?"on":""}">📷 Gallery</button><button data-pv="cmp" class="${view==="cmp"?"on":""}">↔️ Compare</button></div>`;
+  const seg=`<div class="seg"><button data-pv="gal" class="${view==="gal"?"on":""}">Gallery</button><button data-pv="cmp" class="${view==="cmp"?"on":""}">Compare</button></div>`;
   if(view==="gal"){
-    m.innerHTML=seg+(ok?"":`<div class="note" style="color:var(--accent);margin:0 0 10px">⚠️ This browser is blocking local storage, so photos will disappear when you close the app. Try opening the link directly in Safari rather than inside another app.</div>`)+`<div style="margin:8px 0 12px"><label class="btn" for="file" style="display:block;text-align:center">+ Add photos</label></div>`+
+    m.innerHTML=seg+(ok?"":`<div class="note" style="color:var(--accent);margin:0 0 10px">This browser is blocking local storage, so photos will disappear when you close the app. Try opening the link directly in Safari rather than inside another app.</div>`)+`<div style="margin:8px 0 12px"><label class="btn" for="file" style="display:block;text-align:center">+ Add photos</label></div>`+
     (photos.length?`<div class="grid">${photos.map(p=>`<div class="th" data-id="${p.id}"><img src="${urlOf(p)}" alt=""><span>${nm(p)}</span></div>`).join("")}</div>`
     :`<div class="empty">No photos yet.<br>Add your first weekly photo to get started.</div>`)+
     `<p class="note">Tip: keep the same pose, lighting and distance each week. Photos are saved in this browser’s storage on your iPhone. Clearing Safari website data or deleting the Home Screen app can erase them.</p>`;
@@ -255,7 +255,7 @@ function renderWk(m){
   let h=`<div class="wkbar"><button class="sm" id="wm">‹</button><div><b style="font-size:18px">Week ${wkWeek}</b><div class="sub">Mesocycle week</div></div><button class="sm" id="wp">›</button></div>
   <div class="chips">${DAYS.map((x,i)=>`<button class="chip ${i===wkDay?"on":""}" data-i="${i}">${x[0]+x.slice(1).toLowerCase()}</button>`).join("")}</div>
   <h2>${d.t}</h2>`;
-  if(!d.x.length)h+=sid0==="REST"?`<div class="empty">Rest and recover 😴</div>`:`<div class="empty">No exercises yet.<br>Add some in Settings → Edit exercises.</div>`;
+  if(!d.x.length)h+=sid0==="REST"?`<div class="empty">Rest and recover</div>`:`<div class="empty">No exercises yet.<br>Add some in Settings → Edit exercises.</div>`;
   d.x.forEach(s=>{
     const e=s.split("|"),key=`${wkWeek}|${dn}|${e[0]}`,lg=logs[key]||{sets:[]},n=Math.max(+e[4],lg.sets.length);
     const sub=logs[`sub|${dn}|${e[0]}`],name=sub?sub.name:e[1];
@@ -437,10 +437,10 @@ function renderSetup(m){
 // ---------- settings ----------
 function renderSettings(m){
   m.innerHTML=`<h2 style="margin:6px 0 10px;font-size:22px">Settings</h2>
-  <button class="btn alt" id="cw">📅 Set up your week</button>
-  <button class="btn alt" id="ee" style="margin-top:8px">✏️ Edit exercises</button>
+  <button class="btn alt" id="cw">Set up your week</button>
+  <button class="btn alt" id="ee" style="margin-top:8px">Edit exercises</button>
   <button class="btn" id="bk" style="margin-top:8px">Done</button>
-  <p class="note">🔒 Everything stays on this device only. Nothing is ever uploaded.<br>All weights are in kilograms (kg).</p>`;
+  <p class="note">Everything stays on this device only. Nothing is ever uploaded.<br>All weights are in kilograms (kg).</p>`;
   $("#cw").onclick=()=>{draft=null;view="setup";render()};
   $("#ee").onclick=()=>{view="editex";render()};
   $("#bk").onclick=()=>{view="home";render()};

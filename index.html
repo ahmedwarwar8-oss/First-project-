@@ -436,7 +436,7 @@ function renderSettings(m){
   <button class="btn alt" id="cw">📅 Set up your week</button>
   <button class="btn alt" id="ee" style="margin-top:8px">✏️ Edit exercises</button>
   <button class="btn" id="bk" style="margin-top:8px">Done</button>
-  <p class="note">All weights are in kilograms (kg). Your data is stored only on this device and is never uploaded.</p>`;
+  <p class="note">🔒 Everything stays on this device only. Nothing is ever uploaded.<br>All weights are in kilograms (kg).</p>`;
   $("#cw").onclick=()=>{draft=null;view="setup";render()};
   $("#ee").onclick=()=>{view="editex";render()};
   $("#bk").onclick=()=>{view="home";render()};

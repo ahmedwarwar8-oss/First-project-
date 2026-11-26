@@ -88,12 +88,15 @@ nav button i{display:block;font-style:normal;font-size:19px;line-height:1.1;marg
 .stat .v{font-size:22px;font-weight:700;margin:2px 0}
 .stat .l{font-size:12px;color:var(--muted)}
 .mv,.rmx{padding:4px 10px;font-size:12px}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;margin:4px 0 12px}
+.seg button{flex:1;border:0;background:none;color:var(--muted);font-weight:600;font-size:14px;font-family:inherit;padding:9px 0;border-radius:9px}
+.seg button.on{background:var(--accent);color:#fff}
 </style>
 </head>
 <body>
 <header style="display:flex;align-items:center;justify-content:space-between"><div><h1>Progress</h1><div class="sub">Everything stays on this device only.</div></div><button class="sm" id="gear" aria-label="Settings">⚙︎</button></header>
 <main id="main"></main>
-<nav><button id="t-home"><i>🏠</i>Home</button><button id="t-wk"><i>🏋️</i>Workouts</button><button id="t-prog"><i>📈</i>Progress</button><button id="t-bw"><i>⚖️</i>Weight</button><button id="t-gal"><i>📷</i>Photos</button><button id="t-cmp"><i>↔️</i>Compare</button></nav>
+<nav><button id="t-home"><i>🏠</i>Home</button><button id="t-wk"><i>🏋️</i>Workouts</button><button id="t-prog"><i>📈</i>Progress</button><button id="t-bw"><i>⚖️</i>Weight</button><button id="t-gal"><i>📷</i>Photos</button></nav>
 <input type="file" id="file" accept="image/*" multiple style="position:fixed;left:-9999px;opacity:0">
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 
@@ -136,19 +139,20 @@ async function load(){
 // ---------- rendering ----------
 function render(){
   urls.forEach(URL.revokeObjectURL);urls=[];
-  $("#t-gal").className=view==="gal"?"on":"";$("#t-home").className=view==="home"?"on":"";$("#t-cmp").className=view==="cmp"?"on":"";$("#t-wk").className=view==="wk"?"on":"";$("#t-prog").className=view==="prog"?"on":"";$("#t-bw").className=view==="bw"?"on":"";
+  $("#t-gal").className=view==="gal"||view==="cmp"?"on":"";$("#t-home").className=view==="home"?"on":"";$("#t-wk").className=view==="wk"?"on":"";$("#t-prog").className=view==="prog"?"on":"";$("#t-bw").className=view==="bw"?"on":"";
   const m=$("#main");if(view==="wk"){renderWk(m);return}if(view==="prog"){renderProg(m);return}if(view==="bw"){renderBw(m);return}if(view==="home"){renderHome(m);return}if(view==="settings"){renderSettings(m);return}if(view==="editex"){renderEditEx(m);return}if(view==="setup"){renderSetup(m);return}
+  const seg=`<div class="seg"><button data-pv="gal" class="${view==="gal"?"on":""}">📷 Gallery</button><button data-pv="cmp" class="${view==="cmp"?"on":""}">↔️ Compare</button></div>`;
   if(view==="gal"){
-    m.innerHTML=(ok?"":`<div class="note" style="color:var(--accent);margin:0 0 10px">⚠️ This browser is blocking local storage, so photos will disappear when you close the app. Try opening the link directly in Safari rather than inside another app.</div>`)+`<div style="margin:8px 0 12px"><label class="btn" for="file" style="display:block;text-align:center">+ Add photos</label></div>`+
+    m.innerHTML=seg+(ok?"":`<div class="note" style="color:var(--accent);margin:0 0 10px">⚠️ This browser is blocking local storage, so photos will disappear when you close the app. Try opening the link directly in Safari rather than inside another app.</div>`)+`<div style="margin:8px 0 12px"><label class="btn" for="file" style="display:block;text-align:center">+ Add photos</label></div>`+
     (photos.length?`<div class="grid">${photos.map(p=>`<div class="th" data-id="${p.id}"><img src="${urlOf(p)}" alt=""><span>${nm(p)}</span></div>`).join("")}</div>`
     :`<div class="empty">No photos yet.<br>Add your first weekly photo to get started.</div>`)+
     `<p class="note">Tip: keep the same pose, lighting and distance each week. Photos are saved in this browser’s storage on your iPhone. Clearing Safari website data or deleting the Home Screen app can erase them.</p>`;
         m.querySelectorAll(".th").forEach(e=>e.onclick=()=>openSheet(+e.dataset.id));
   }else{
-    if(photos.length<2){m.innerHTML=`<div class="empty">Add at least two photos to compare them.</div>`;return}
+    if(photos.length<2){m.innerHTML=seg+`<div class="empty">Add at least two photos to compare them.</div>`;return}
     const opt=id=>photos.map(p=>`<option value="${p.id}" ${p.id===id?"selected":""}>${nm(p)}</option>`).join("");
     const a=photos.find(p=>p.id===selA),b=photos.find(p=>p.id===selB);
-    m.innerHTML=`<div class="cmp" id="cmp">
+    m.innerHTML=seg+`<div class="cmp" id="cmp">
       <img id="base" src="${urlOf(b)}" alt=""><img id="top" src="${urlOf(a)}" alt="">
       <div class="tag" style="left:10px" id="tagA">${nm(a)}</div><div class="tag" style="right:10px" id="tagB">${nm(b)}</div>
       <div class="bar" id="bar"><div class="knob">⇆</div></div></div>
@@ -489,7 +493,7 @@ function renderEditEx(m){
 
 // ---------- events ----------
 $("#t-gal").onclick=()=>{view="gal";render()};
-$("#t-cmp").onclick=()=>{view="cmp";render()};
+$("#main").addEventListener("click",e=>{const b=e.target.closest("[data-pv]");if(b){view=b.dataset.pv;render()}});
 $("#t-wk").onclick=()=>{view="wk";render()};
 $("#t-prog").onclick=()=>{view="prog";render()};
 $("#t-bw").onclick=()=>{view="bw";render()};

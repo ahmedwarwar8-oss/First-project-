@@ -1,6 +1,6 @@
 // Service worker: lets the app open with no internet connection.
 // Bump VERSION whenever you change index.html or other files so phones pick up the update.
-const VERSION = "progress-v27";
+const VERSION = "progress-v28";
 const FILES = [
   "./",
   "./index.html",

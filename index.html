@@ -107,6 +107,8 @@ nav button i{display:flex;justify-content:center;font-style:normal;margin-bottom
 .lg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 .bpr{grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
 .bpr span:nth-child(2){white-space:nowrap;font-size:13.5px}
+.bpr[data-ed]{cursor:pointer}
+.bpsel{background:var(--bg);border-radius:8px;margin:0 -6px;padding-left:6px;padding-right:6px}
 .shead{display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px}
 .shead h2{margin:0;font-size:28px}
 .sgh{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:22px 16px 6px}
@@ -516,12 +518,12 @@ function renderBp(m){
   let h=statsSeg()+`<div class="ex"><h3>Log heart readings</h3>
   <div class="row"><div style="flex:1"><label>Date</label><input type="date" id="pd" value="${bpDate}"></div><div style="flex:1"><label>Resting HR (bpm)</label><input type="text" inputmode="numeric" id="phr" placeholder="e.g. 62" value="${cur.hr||""}"></div></div>
   <div class="row"><div style="flex:1"><label>Systolic, SYS (mmHg)</label><input type="text" inputmode="numeric" id="psys" placeholder="e.g. 120" value="${cur.sys||""}"></div><div style="flex:1"><label>Diastolic, DIA (mmHg)</label><input type="text" inputmode="numeric" id="pdia" placeholder="e.g. 80" value="${cur.dia||""}"></div></div>
-  <button class="btn" id="psv">Save</button><div class="meta" id="pmsg" style="margin-top:6px"></div></div>`;
+  <button class="btn" id="psv">${cur.k?"Update reading":"Save"}</button>${cur.k?`<button class="btn del" id="pdl" style="margin-top:8px">Delete this reading</button>`:""}<div class="meta" id="pmsg" style="margin-top:6px">${cur.k?`Editing the reading from ${fmt(bpDate)}. Change any number and tap Update.`:""}</div></div>`;
   if(!es.length)h+=`<div class="empty">No readings yet. Add your first one above.</div>`;
   else{
     if(bpE.length)h+=`<div class="ex"><div class="meta" style="margin-bottom:6px">Blood pressure</div>${lineChart(bpE,[{k:"sys",c:"var(--accent)",l:"SYS"},{k:"dia",c:"#2b8fd6",l:"DIA"}],"mmHg")}</div>`;
     if(hrE.length)h+=`<div class="ex"><div class="meta" style="margin-bottom:6px">Resting heart rate</div>${lineChart(hrE,[{k:"hr",c:"#34c759",l:"HR"}],"bpm")}</div>`;
-    h+=`<div class="ex"><div class="prow ph bpr"><span>Date</span><span>BP · HR</span><span></span></div>`+es.slice().reverse().map(e=>`<div class="prow bpr"><span>${fmt(e.d)}</span><span>${e.sys&&e.dia?`<b>${e.sys}/${e.dia}</b> mmHg`:"—"}${e.hr?` · ${e.hr} bpm`:""}</span><button class="chip bwd" data-k="${e.k}">Delete</button></div>`).join("")+`</div>`;
+    h+=`<div class="ex"><div class="meta" style="margin-bottom:4px">Tap a reading to edit it.</div><div class="prow ph bpr"><span>Date</span><span>BP · HR</span><span></span></div>`+es.slice().reverse().map(e=>`<div class="prow bpr ${e.d===bpDate?"bpsel":""}" data-ed="${e.d}"><span>${fmt(e.d)}</span><span>${e.sys&&e.dia?`<b>${e.sys}/${e.dia}</b> mmHg`:"—"}${e.hr?` · ${e.hr} bpm`:""}</span><button class="chip bwd" data-k="${e.k}">Delete</button></div>`).join("")+`</div>`;
   }
   h+=`<p class="note">For tracking only, not medical advice. Measure at rest, seated, at the same time of day. Talk to a doctor about readings that concern you.</p>`;
   m.innerHTML=h;
@@ -533,7 +535,11 @@ function renderBp(m){
     if(sys&&(sys<60||sys>260||dia<30||dia>160||dia>=sys)){msg.textContent="Check the blood pressure numbers: SYS is the higher one (e.g. 120/80).";return}
     if(hr&&(hr<25||hr>220)){msg.textContent="Heart rate should be between 25 and 220 bpm.";return}
     const o={k:"bp|"+bpDate,d:bpDate};if(sys){o.sys=sys;o.dia=dia}if(hr)o.hr=hr;await wPut(o);render()};
-  m.querySelectorAll(".bwd").forEach(b=>b.onclick=async()=>{if(!b.dataset.a){b.dataset.a=1;b.textContent="Confirm";b.classList.add("on");return}await wDel(b.dataset.k);render()});
+  m.querySelectorAll(".bwd").forEach(b=>b.onclick=async ev=>{ev.stopPropagation();if(!b.dataset.a){b.dataset.a=1;b.textContent="Confirm";b.classList.add("on");return}await wDel(b.dataset.k);render()});
+  m.querySelectorAll("[data-ed]").forEach(r=>r.onclick=()=>{bpDate=r.dataset.ed;render();window.scrollTo({top:0,behavior:"smooth"})});
+  if($("#pdl"))$("#pdl").onclick=async()=>{const b=$("#pdl");
+    if(!b.dataset.a){b.dataset.a=1;b.textContent="Tap again to delete";b.style.background="var(--accent)";b.style.color="#fff";return}
+    await wDel("bp|"+bpDate);bpDate=today();render()};
 }
 
 // ---------- home + setup ----------

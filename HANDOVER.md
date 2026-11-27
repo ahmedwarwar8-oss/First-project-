@@ -52,7 +52,7 @@ The whole app is one HTML file with plain JavaScript and CSS: no framework, no b
 | File | Purpose |
 | --- | --- |
 | `index.html` | The entire app: layout, styles and code |
-| `sw.js` | Service worker. Network first, falls back to cache when offline. Holds `VERSION` (now `progress-v28`) |
+| `sw.js` | Service worker. Network first, falls back to cache when offline. Holds `VERSION` (now `progress-v29`) |
 | `manifest.webmanifest` | App name (Physiq), colours (accent `#e8412c`), icons, standalone display |
 | `icons/` | Home-screen icons: 180 px Apple icon, 192 and 512 px, and a 512 px maskable icon |
 | `README.md` | Setup, hosting and install instructions |
@@ -75,7 +75,7 @@ The whole app is one HTML file with plain JavaScript and CSS: no framework, no b
 | `water\|<date>`, `_water` | Day's water total plus a list of additions (for Undo); the daily goal in ml |
 | `_onb`, `_backup` | First-launch done flag; time of the last backup |
 
-**Weeks and mesocycles.** The week is a single running counter. A cycle is 13 weeks: weeks 1–12 are training and week 13 is the deload. Mesocycle = floor((week − 1) / 13) + 1. Swaps and set changes are stored with the week they start from, so they carry forward without rewriting earlier weeks.
+**Weeks and mesocycles.** The week is a single running counter. A mesocycle is 12 training weeks only; the deload week sits between mesocycles and is not counted as part of one. Internally the counter runs in 13-week cycles (12 training + 1 deload). Swaps and set changes are stored with the week they start from, so they carry forward without rewriting earlier weeks.
 
 ## Making and shipping changes
 

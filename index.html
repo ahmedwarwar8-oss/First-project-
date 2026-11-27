@@ -306,7 +306,8 @@ SUN:{t:"Upper + Arms",x:[
 // Mesocycles: 12 training weeks, then 1 deload week (13-week cycle). wkWeek is a running week count.
 const MESO=12,CYC=MESO+1,mesoOf=w=>Math.floor((w-1)/CYC)+1,posOf=w=>(w-1)%CYC+1,isDeload=w=>posOf(w)===CYC;
 const wkLabel=w=>isDeload(w)?"Deload week":`Week ${posOf(w)} of ${MESO}`;
-const wkShort=w=>(mesoOf(w)>1?`M${mesoOf(w)} `:"")+(isDeload(w)?"Deload":`W${posOf(w)}`);
+const wkShort=w=>isDeload(w)?`Deload ${mesoOf(w)}`:(mesoOf(w)>1?`M${mesoOf(w)} `:"")+`W${posOf(w)}`;
+const mesoLabel=w=>isDeload(w)?`Between Mesocycle ${mesoOf(w)} and ${mesoOf(w)+1}`:`Mesocycle ${mesoOf(w)}`;
 let wkWeek=1, wkDay=(new Date().getDay()+6)%7, logs={}, lmem={};
 const hasW=()=>db&&db.objectStoreNames.contains("w");
 function wAll(){return new Promise(res=>{if(!hasW())return res(Object.values(lmem));const q=db.transaction("w").objectStore("w").getAll();q.onsuccess=()=>res(q.result);q.onerror=()=>res([])})}
@@ -322,7 +323,7 @@ const atWeek=(k,w)=>{let v=null;hist(k).slice().sort((a,b)=>a.w-b.w).forEach(x=>
 const setFrom=(k,w,v)=>wPut({k,h:hist(k).filter(x=>x.w<w).concat({w,v})});
 function renderWk(m){
   const pa=planAt(wkWeek),dn=pa.sess(wkDay),d=pa.get(dn),sid0=dn;
-  let h=`<div class="wkbar"><button class="sm" id="wm">‹</button><div><b style="font-size:18px">${wkLabel(wkWeek)}</b><div class="sub">Mesocycle ${mesoOf(wkWeek)}</div></div><button class="sm" id="wp">›</button></div>
+  let h=`<div class="wkbar"><button class="sm" id="wm">‹</button><div><b style="font-size:18px">${wkLabel(wkWeek)}</b><div class="sub">${mesoLabel(wkWeek)}</div></div><button class="sm" id="wp">›</button></div>
   <div class="chips">${DAYS.map((x,i)=>`<button class="chip ${i===wkDay?"on":""}" data-i="${i}">${x[0]+x.slice(1).toLowerCase()}</button>`).join("")}</div>
   <h2>${d.t}</h2>`;
   const dl=isDeload(wkWeek);
@@ -408,7 +409,7 @@ const esc=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g
 function wDel(k){delete logs[k];return new Promise(res=>{if(!hasW()){delete lmem[k];return res()}const q=db.transaction("w","readwrite").objectStore("w").delete(k);q.onsuccess=q.onerror=()=>res()})}
 function openSwap(dn,slot){
   const k=`sub|${dn}|${slot}`,close=()=>$("#modal").classList.remove("on");
-  $("#sheet").innerHTML=`<div class="shd"><div class="shr"><button class="chip" id="back">‹ Back</button><h2>Swap exercise</h2></div><div class="meta" style="margin:-4px 0 8px">Applies from ${wkLabel(wkWeek).replace(" of 12","")} (Mesocycle ${mesoOf(wkWeek)}) onward. Earlier weeks stay as they were.</div><input type="text" id="sq" placeholder="Search, or type your own" autocomplete="off"></div><div id="sl" style="margin-top:8px"></div>
+  $("#sheet").innerHTML=`<div class="shd"><div class="shr"><button class="chip" id="back">‹ Back</button><h2>Swap exercise</h2></div><div class="meta" style="margin:-4px 0 8px">Applies from ${isDeload(wkWeek)?"this deload week":wkLabel(wkWeek).replace(" of 12","")+" (Mesocycle "+mesoOf(wkWeek)+")"} onward. Earlier weeks stay as they were.</div><input type="text" id="sq" placeholder="Search, or type your own" autocomplete="off"></div><div id="sl" style="margin-top:8px"></div>
   <div class="row"><button class="btn alt" id="sr">Reset to program</button></div><div class="row"><button class="btn alt" id="sx">Cancel</button></div>`;
   $("#modal").classList.add("on");
   const draw=()=>{const q=$("#sq").value.trim(),ql=q.toLowerCase();let h=q?`<button class="opt" data-n="${esc(q)}">Use “${esc(q)}”</button>`:"";
@@ -567,7 +568,7 @@ function renderHome(m){
   <div class="ex"><div class="meta">TODAY</div><h3 style="font-size:20px;margin:2px 0">${ss.t}</h3>
   ${rest?`<div class="meta">${sid==="REST"?"Recover, eat well and sleep.":"No exercises yet. Add some in Settings → Edit exercises."}</div>`:`<div class="meta">${ss.x.length} exercises · ${nsets} sets${started?" · in progress":""}</div><button class="btn" id="go" style="margin-top:10px">${started?"Continue workout":"Start workout"}</button>`}</div>
 ${waterCard()}
-  <div class="ex"><div class="exh"><div><h3>${wkLabel(wkWeek)}</h3><div class="meta" style="margin:0">Mesocycle ${mesoOf(wkWeek)}</div></div><span class="meta">${done}/${planned.length} sessions done</span></div>
+  <div class="ex"><div class="exh"><div><h3>${wkLabel(wkWeek)}</h3><div class="meta" style="margin:0">${mesoLabel(wkWeek)}</div></div><span class="meta">${done}/${planned.length} sessions done</span></div>
   <div class="days">${DAYS.map((d,i)=>{const s=sc[d]||"REST",st=s==="REST"?"rs":sessDone(s)?"dn":"pl";
     return `<button class="dd ${st} ${i===di?"td":""}" data-i="${i}"><span>${d[0]+d.slice(1).toLowerCase()}</span><b>${st==="dn"?"✓":st==="rs"?"R":AB[s]||"•"}</b></button>`}).join("")}</div></div>
   <div class="stats">
@@ -677,7 +678,7 @@ function renderSettings(m){
     ${row("cw",ic("var(--accent)",'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>'),"Set up your week","")}
     ${row("ee",ic("#ff9500",'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>'),"Edit exercises","")}
   </div>
-  <div class="sgf">Mesocycle ${mesoOf(wkWeek)} · ${wkLabel(wkWeek)}</div>
+  <div class="sgf">${isDeload(wkWeek)?`Deload week, between Mesocycle ${mesoOf(wkWeek)} and ${mesoOf(wkWeek)+1}`:`Mesocycle ${mesoOf(wkWeek)} · ${wkLabel(wkWeek)}`}. Each mesocycle is ${MESO} training weeks; deload weeks are not counted.</div>
   <div class="sgh">Water</div>
   <div class="sg">
     ${row("wgoal2",ic("#2b8fd6",'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>'),"Daily goal",litres(waterGoal()))}

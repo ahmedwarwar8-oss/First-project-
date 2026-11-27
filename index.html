@@ -153,6 +153,7 @@ async function load(){
 // ---------- rendering ----------
 function render(){
   urls.forEach(URL.revokeObjectURL);urls=[];
+  $("#gear").style.visibility=view==="home"?"visible":"hidden";
   $("#t-gal").className=view==="gal"||view==="cmp"?"on":"";$("#t-home").className=view==="home"?"on":"";$("#t-wk").className=view==="wk"?"on":"";$("#t-prog").className=view==="prog"?"on":"";$("#t-bw").className=view==="bw"?"on":"";
   const m=$("#main");if(view==="wk"){renderWk(m);return}if(view==="prog"){renderProg(m);return}if(view==="bw"){renderBw(m);return}if(view==="home"){renderHome(m);return}if(view==="settings"){renderSettings(m);return}if(view==="editex"){renderEditEx(m);return}if(view==="setup"){renderSetup(m);return}
   if(view!=="gal")pick=null;

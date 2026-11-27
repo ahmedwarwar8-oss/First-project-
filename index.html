@@ -98,6 +98,13 @@ nav button i{display:flex;justify-content:center;font-style:normal;margin-bottom
 .stat .l{font-size:12px;color:var(--muted)}
 .mv,.rmx{padding:4px 10px;font-size:12px}
 .dlb{border:2px solid var(--accent)}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;margin:4px 0 12px}
+.seg button{flex:1;border:0;background:none;color:var(--muted);font-weight:600;font-size:14px;font-family:inherit;padding:9px 0;border-radius:9px}
+.seg button.on{background:var(--accent);color:#fff}
+.lg{display:flex;gap:14px;font-size:12px;font-weight:600;margin-bottom:6px}
+.lg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.bpr{grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+.bpr span:nth-child(2){white-space:nowrap;font-size:13.5px}
 .shead{display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px}
 .shead h2{margin:0;font-size:28px}
 .sgh{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:22px 16px 6px}
@@ -125,7 +132,7 @@ header{min-height:62px}
 <body>
 <header style="display:flex;align-items:center;justify-content:space-between"><div class="brand"><svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="24" fill="#e8412c"/><path fill="#fff" d="M30 22H55.5A17.5 17.5 0 0 1 55.5 57H44V78H30Z"/><path fill="#e8412c" d="M44 33H55A6.5 6.5 0 0 1 55 46H44Z"/></svg><h1>Physiq</h1></div><button class="sm" id="gear" aria-label="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
 <main id="main"></main>
-<nav><button id="t-home"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg></i>Home</button><button id="t-wk"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg></i>Workouts</button><button id="t-prog"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg></i>Progress</button><button id="t-bw"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8.5 9a5 5 0 0 1 7 0"/><path d="m12 12 1.5-2.5"/></svg></i>Weight</button><button id="t-gal"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v13H4z"/><circle cx="12" cy="13" r="3.5"/></svg></i>Photos</button></nav>
+<nav><button id="t-home"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg></i>Home</button><button id="t-wk"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg></i>Workouts</button><button id="t-stats"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg></i>Stats</button><button id="t-gal"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v13H4z"/><circle cx="12" cy="13" r="3.5"/></svg></i>Photos</button></nav>
 <input type="file" id="file" accept="image/*" multiple style="position:fixed;left:-9999px;opacity:0">
 <input type="file" id="rfile" style="position:fixed;left:-9999px;opacity:0">
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
@@ -170,8 +177,8 @@ async function load(){
 function render(){
   urls.forEach(URL.revokeObjectURL);urls=[];
   $("#gear").style.visibility=view==="home"?"visible":"hidden";
-  $("#t-gal").className=view==="gal"||view==="cmp"?"on":"";$("#t-home").className=view==="home"?"on":"";$("#t-wk").className=view==="wk"?"on":"";$("#t-prog").className=view==="prog"?"on":"";$("#t-bw").className=view==="bw"?"on":"";
-  const m=$("#main");if(view==="wk"){renderWk(m);return}if(view==="prog"){renderProg(m);return}if(view==="bw"){renderBw(m);return}if(view==="home"){renderHome(m);return}if(view==="settings"){renderSettings(m);return}if(view==="editex"){renderEditEx(m);return}if(view==="setup"){renderSetup(m);return}
+  $("#t-gal").className=view==="gal"||view==="cmp"?"on":"";$("#t-home").className=view==="home"?"on":"";$("#t-wk").className=view==="wk"?"on":"";$("#t-stats").className=view==="prog"||view==="bw"||view==="bp"?"on":"";
+  const m=$("#main");if(view==="wk"){renderWk(m);return}if(view==="prog"){renderProg(m);return}if(view==="bw"){renderBw(m);return}if(view==="bp"){renderBp(m);return}if(view==="home"){renderHome(m);return}if(view==="settings"){renderSettings(m);return}if(view==="editex"){renderEditEx(m);return}if(view==="setup"){renderSetup(m);return}
   if(view!=="gal")pick=null;
   if(view==="gal"){
     const picking=!!pick,warn=ok?"":`<div class="note" style="color:var(--accent);margin:0 0 10px">This browser is blocking local storage, so photos will disappear when you close the app. Try opening the link directly in Safari rather than inside another app.</div>`;
@@ -404,7 +411,7 @@ function progData(){
   return out}
 function renderProg(m){
   const D=progData(),names=Object.keys(D).sort();
-  if(!names.length){m.innerHTML=`<div class="empty">Log some sets in the Workouts tab and your progress charts will appear here.</div>`;return}
+  if(!names.length){m.innerHTML=statsSeg()+`<div class="empty">Log some sets in the Workouts tab and your progress charts will appear here.</div>`;return}
   if(!names.includes(progSel))progSel=names[0];
   const pts=Object.keys(D[progSel]).map(Number).sort((a,b)=>a-b).map(w=>{const ss=D[progSel][w],vol=ss.reduce((a,x)=>a+num(x.w)*num(x.r),0);
     return{w,n:ss.length,vol,av:vol/ss.length}});
@@ -423,7 +430,7 @@ function renderProg(m){
   const arrow=v=>v>0?`<span style="color:#2fa84f">▲ ${Math.round(v)}</span>`:v<0?`<span style="color:var(--accent)">▼ ${Math.round(-v)}</span>`:`<span style="color:var(--muted)">–</span>`;
   let rows=`<div class="prow ph"><span>Week</span><span>Sets</span><span>Avg / set (kg)</span><span>Total (kg)</span></div>`;
   pts.forEach((p,i)=>{const q=pts[i-1];rows+=`<div class="prow"><span>${wkShort(p.w)}</span><span>${p.n}</span><span>${Math.round(p.av)} ${q?arrow(p.av-q.av):""}</span><span>${Math.round(p.vol)}</span></div>`});
-  m.innerHTML=`<label>Exercise</label><select id="ps">${names.map(n=>`<option value="${esc(n)}" ${n===progSel?"selected":""}>${esc(n)}</option>`).join("")}</select>
+  m.innerHTML=statsSeg()+`<label>Exercise</label><select id="ps">${names.map(n=>`<option value="${esc(n)}" ${n===progSel?"selected":""}>${esc(n)}</option>`).join("")}</select>
   <div class="ex" style="margin-top:12px"><div class="meta" style="margin-bottom:6px">Average volume moved per set (kg × reps)</div>
   <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">${g}</svg>
   <div class="meta" style="margin-top:6px">${pts.length>1?`${Math.round(a[K])} → ${Math.round(z[K])} (${dv>0?"+":""}${Math.round(dv)}, ${pc>0?"+":""}${pc}%)`:"Log another week to see your trend."}</div></div>
@@ -432,6 +439,8 @@ function renderProg(m){
 }
 
 // ---------- body weight ----------
+let statsView="prog";
+function statsSeg(){statsView=view;return `<div class="seg"><button data-sv="prog" class="${view==="prog"?"on":""}">Lifts</button><button data-sv="bw" class="${view==="bw"?"on":""}">Weight</button><button data-sv="bp" class="${view==="bp"?"on":""}">Heart</button></div>`}
 const bwUnit="kg"; let bwDate=today();
 function renderBw(m){
   const es=Object.keys(logs).filter(k=>k.startsWith("bw|")).map(k=>logs[k]).sort((a,b)=>a.d<b.d?-1:1);
@@ -457,11 +466,53 @@ function renderBw(m){
     const arrow=v=>v>0?`<span style="color:var(--accent)">▲ ${f(v)}</span>`:v<0?`<span style="color:#2fa84f">▼ ${f(-v)}</span>`:`<span style="color:var(--muted)">–</span>`;
     list=`<div class="ex">`+es.map((e,i)=>({e,p:es[i-1]})).reverse().map(({e,p})=>`<div class="prow bwr"><span>${fmt(e.d)}</span><span>${f(e.v)} ${bwUnit} ${p?arrow(e.v-p.v):""}</span><button class="chip bwd" data-k="${e.k}">Delete</button></div>`).join("")+`</div>`;
   }else chart=`<div class="empty">No entries yet. Add your first weigh-in above.</div>`;
-  m.innerHTML=`<div class="ex"><h3>Log body weight</h3>
+  m.innerHTML=statsSeg()+`<div class="ex"><h3>Log body weight</h3>
   <div class="row"><div style="flex:1"><label>Date</label><input type="date" id="bd" value="${bwDate}"></div><div style="flex:1"><label>Weight (${bwUnit})</label><input type="text" inputmode="decimal" id="bv" placeholder="e.g. 82.4" value="${cur?cur.v:""}"></div></div>
   <button class="btn" id="bs">Save</button></div>`+chart+list;
   $("#bd").onchange=e=>{bwDate=e.target.value||today();render()};
   $("#bs").onclick=async()=>{const v=num($("#bv").value);if(v<=0||!bwDate)return;await wPut({k:"bw|"+bwDate,d:bwDate,v});render()};
+  m.querySelectorAll(".bwd").forEach(b=>b.onclick=async()=>{if(!b.dataset.a){b.dataset.a=1;b.textContent="Confirm";b.classList.add("on");return}await wDel(b.dataset.k);render()});
+}
+
+// ---------- heart: blood pressure + resting heart rate ----------
+let bpDate=today();
+function lineChart(es,series,unit){
+  const W=340,H=210,L=40,R=16,T=24,B=30,tm=e=>new Date(e.d+"T12:00:00").getTime(),t0=tm(es[0]),t1=tm(es[es.length-1]);
+  const X=e=>es.length===1||t1===t0?W/2:L+(tm(e)-t0)/(t1-t0)*(W-L-R);
+  const vs=[];es.forEach(e=>series.forEach(s=>{if(e[s.k])vs.push(e[s.k])}));
+  let lo=Math.min(...vs),hi=Math.max(...vs);const pd=Math.max((hi-lo)*.2,5);lo-=pd;hi+=pd;
+  const Y=v=>T+(hi-v)/(hi-lo)*(H-T-B);let g="";
+  for(let i=0;i<=2;i++){const y=T+i*(H-T-B)/2;g+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--line)"/>`}
+  g+=`<text x="${L-6}" y="${T+4}" text-anchor="end" font-size="10" style="fill:var(--muted)">${Math.round(hi)}</text><text x="${L-6}" y="${H-B+4}" text-anchor="end" font-size="10" style="fill:var(--muted)">${Math.round(lo)}</text>`;
+  series.forEach(s=>{const pts=es.filter(e=>e[s.k]).map(e=>[X(e),Y(e[s.k]),e[s.k]]);
+    if(pts.length>1)g+=`<polyline fill="none" stroke="${s.c}" stroke-width="2.5" stroke-linejoin="round" points="${pts.map(q=>q[0]+","+q[1]).join(" ")}"/>`;
+    pts.forEach((q,i)=>{g+=`<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="${s.c}"/>`;if(i===pts.length-1)g+=`<text x="${q[0]}" y="${q[1]-8}" text-anchor="middle" font-size="11" font-weight="600" style="fill:var(--text)">${q[2]}</text>`})});
+  g+=`<text x="${X(es[0])}" y="${H-10}" text-anchor="${es.length>1?"start":"middle"}" font-size="11" style="fill:var(--muted)">${fmt(es[0].d)}</text>`;
+  if(es.length>1)g+=`<text x="${X(es[es.length-1])}" y="${H-10}" text-anchor="end" font-size="11" style="fill:var(--muted)">${fmt(es[es.length-1].d)}</text>`;
+  return `<div class="lg">${series.map(s=>`<span><i style="background:${s.c}"></i>${s.l}</span>`).join("")}<span style="color:var(--muted);font-weight:400">${unit}</span></div><svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">${g}</svg>`}
+function renderBp(m){
+  const es=Object.keys(logs).filter(k=>k.startsWith("bp|")).map(k=>logs[k]).sort((a,b)=>a.d<b.d?-1:1);
+  const cur=logs["bp|"+bpDate]||{},bpE=es.filter(e=>e.sys&&e.dia),hrE=es.filter(e=>e.hr);
+  let h=statsSeg()+`<div class="ex"><h3>Log heart readings</h3>
+  <div class="row"><div style="flex:1"><label>Date</label><input type="date" id="pd" value="${bpDate}"></div><div style="flex:1"><label>Resting HR (bpm)</label><input type="text" inputmode="numeric" id="phr" placeholder="e.g. 62" value="${cur.hr||""}"></div></div>
+  <div class="row"><div style="flex:1"><label>Systolic, SYS (mmHg)</label><input type="text" inputmode="numeric" id="psys" placeholder="e.g. 120" value="${cur.sys||""}"></div><div style="flex:1"><label>Diastolic, DIA (mmHg)</label><input type="text" inputmode="numeric" id="pdia" placeholder="e.g. 80" value="${cur.dia||""}"></div></div>
+  <button class="btn" id="psv">Save</button><div class="meta" id="pmsg" style="margin-top:6px"></div></div>`;
+  if(!es.length)h+=`<div class="empty">No readings yet. Add your first one above.</div>`;
+  else{
+    if(bpE.length)h+=`<div class="ex"><div class="meta" style="margin-bottom:6px">Blood pressure</div>${lineChart(bpE,[{k:"sys",c:"var(--accent)",l:"SYS"},{k:"dia",c:"#2b8fd6",l:"DIA"}],"mmHg")}</div>`;
+    if(hrE.length)h+=`<div class="ex"><div class="meta" style="margin-bottom:6px">Resting heart rate</div>${lineChart(hrE,[{k:"hr",c:"#34c759",l:"HR"}],"bpm")}</div>`;
+    h+=`<div class="ex"><div class="prow ph bpr"><span>Date</span><span>BP · HR</span><span></span></div>`+es.slice().reverse().map(e=>`<div class="prow bpr"><span>${fmt(e.d)}</span><span>${e.sys&&e.dia?`<b>${e.sys}/${e.dia}</b> mmHg`:"—"}${e.hr?` · ${e.hr} bpm`:""}</span><button class="chip bwd" data-k="${e.k}">Delete</button></div>`).join("")+`</div>`;
+  }
+  h+=`<p class="note">For tracking only, not medical advice. Measure at rest, seated, at the same time of day. Talk to a doctor about readings that concern you.</p>`;
+  m.innerHTML=h;
+  $("#pd").onchange=e=>{bpDate=e.target.value||today();render()};
+  $("#psv").onclick=async()=>{
+    const n=id=>{const v=parseInt($(id).value);return isNaN(v)?0:v},sys=n("#psys"),dia=n("#pdia"),hr=n("#phr"),msg=$("#pmsg");
+    if(!sys&&!dia&&!hr){msg.textContent="Enter blood pressure, heart rate, or both.";return}
+    if((sys||dia)&&!(sys&&dia)){msg.textContent="Enter both SYS and DIA for blood pressure.";return}
+    if(sys&&(sys<60||sys>260||dia<30||dia>160||dia>=sys)){msg.textContent="Check the blood pressure numbers: SYS is the higher one (e.g. 120/80).";return}
+    if(hr&&(hr<25||hr>220)){msg.textContent="Heart rate should be between 25 and 220 bpm.";return}
+    const o={k:"bp|"+bpDate,d:bpDate};if(sys){o.sys=sys;o.dia=dia}if(hr)o.hr=hr;await wPut(o);render()};
   m.querySelectorAll(".bwd").forEach(b=>b.onclick=async()=>{if(!b.dataset.a){b.dataset.a=1;b.textContent="Confirm";b.classList.add("on");return}await wDel(b.dataset.k);render()});
 }
 
@@ -677,8 +728,8 @@ function renderEditEx(m){
 // ---------- events ----------
 $("#t-gal").onclick=()=>{view="gal";render()};
 $("#t-wk").onclick=()=>{view="wk";render()};
-$("#t-prog").onclick=()=>{view="prog";render()};
-$("#t-bw").onclick=()=>{view="bw";render()};
+$("#t-stats").onclick=()=>{view=statsView;render()};
+$("#main").addEventListener("click",e=>{const b=e.target.closest("[data-sv]");if(b){view=b.dataset.sv;render()}});
 $("#t-home").onclick=()=>{view="home";render()};
 $("#gear").onclick=()=>{view="settings";render()};
 $("#file").onchange=async e=>{

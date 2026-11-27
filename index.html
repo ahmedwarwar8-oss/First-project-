@@ -273,15 +273,15 @@ function wAll(){return new Promise(res=>{if(!hasW())return res(Object.values(lme
 function wPut(o){logs[o.k]=o;return new Promise(res=>{if(!hasW()){lmem[o.k]=o;return res()}const q=db.transaction("w","readwrite").objectStore("w").put(o);q.onsuccess=q.onerror=()=>res()})}
 async function loadLogs(){logs={};(await wAll()).forEach(o=>logs[o.k]=o);if(logs._meta)wkWeek=logs._meta.week||1}
 const num=v=>{const n=parseFloat(String(v).replace(",","."));return isNaN(n)?0:n};
-function totals(){const dn=sess(wkDay);let sets=0,vol=0;
-  PLAN[dn].x.forEach(s=>{const lg=logs[`${wkWeek}|${dn}|${s.split("|")[0]}`];if(lg)lg.sets.forEach(x=>{if(num(x.r)>0){sets++;vol+=num(x.w)*num(x.r)}})});
+function totals(){const pa=planAt(wkWeek),dn=pa.sess(wkDay);let sets=0,vol=0;
+  pa.get(dn).x.forEach(s=>{const lg=logs[`${wkWeek}|${dn}|${s.split("|")[0]}`];if(lg)lg.sets.forEach(x=>{if(num(x.r)>0){sets++;vol+=num(x.w)*num(x.r)}})});
   return `${sets} sets logged · volume ${Math.round(vol)} kg`}
 // Changes (swaps, set counts) apply from the week they are made in onward; earlier weeks keep their history.
 const hist=k=>{const r=logs[k];if(!r)return [];return r.h||(r.name!=null?[{w:1,v:r.name}]:[])};
 const atWeek=(k,w)=>{let v=null;hist(k).slice().sort((a,b)=>a.w-b.w).forEach(x=>{if(x.w<=w)v=x.v});return v};
 const setFrom=(k,w,v)=>wPut({k,h:hist(k).filter(x=>x.w<w).concat({w,v})});
 function renderWk(m){
-  const dn=sess(wkDay),d=PLAN[dn],sid0=dn;
+  const pa=planAt(wkWeek),dn=pa.sess(wkDay),d=pa.get(dn),sid0=dn;
   let h=`<div class="wkbar"><button class="sm" id="wm">‹</button><div><b style="font-size:18px">${wkLabel(wkWeek)}</b><div class="sub">Mesocycle ${mesoOf(wkWeek)}</div></div><button class="sm" id="wp">›</button></div>
   <div class="chips">${DAYS.map((x,i)=>`<button class="chip ${i===wkDay?"on":""}" data-i="${i}">${x[0]+x.slice(1).toLowerCase()}</button>`).join("")}</div>
   <h2>${d.t}</h2>`;
@@ -301,7 +301,7 @@ function renderWk(m){
   if(d.x.length)h+=`<div class="ex"><b id="tot">${totals()}</b></div>`;
   m.innerHTML=h;
   $("#wm").onclick=()=>{wkWeek=Math.max(1,wkWeek-1);wPut({k:"_meta",week:wkWeek});render()};
-  $("#wp").onclick=()=>{if(posOf(wkWeek)===MESO)return openDeload();wkWeek++;wPut({k:"_meta",week:wkWeek});render()};
+  $("#wp").onclick=()=>{if(posOf(wkWeek)===MESO)return openDeload();if(isDeload(wkWeek))return openNewMeso();wkWeek++;wPut({k:"_meta",week:wkWeek});render()};
   m.querySelectorAll(".chip[data-i]").forEach(b=>b.onclick=()=>{wkDay=+b.dataset.i;render()});
   m.querySelectorAll("input[data-k]").forEach(el=>el.oninput=()=>{
     const k=el.dataset.k,i=+el.dataset.i,lg=logs[k]||{k,sets:[]};
@@ -313,6 +313,31 @@ function renderWk(m){
   m.querySelectorAll(".swap").forEach(b=>b.onclick=()=>openSwap(b.dataset.d,b.dataset.s));
 }
 
+function openWelcome(){
+  const close=()=>$("#modal").classList.remove("on");
+  $("#sheet").innerHTML=`<h2 style="margin-top:0">Welcome to Physiq</h2>
+  <p>Let’s set up your workout plan. Choose the days you train, then pick the exercises for each day. It takes about a minute, and you can change it any time in Settings.</p>
+  <div class="row"><button class="btn" id="wsu">Set up my plan</button></div>
+  <div class="row"><button class="btn alt" id="wdf">Use the default plan</button></div>`;
+  $("#modal").classList.add("on");
+  $("#wsu").onclick=async()=>{await wPut({k:"_onb",t:Date.now()});close();flow="onb";draft=null;view="setup";render()};
+  $("#wdf").onclick=async()=>{await wPut({k:"_onb",t:Date.now()});close()};
+}
+function openNewMeso(){
+  const close=()=>$("#modal").classList.remove("on"),next=mesoOf(wkWeek)+1;
+  $("#sheet").innerHTML=`<div class="shr"><button class="chip" id="back">‹ Back</button><h2>Start Mesocycle ${next}</h2></div>
+  <p>Deload done. Would you like a new workout plan for the next ${MESO} weeks?</p>
+  <div class="meta">Your past mesocycles keep the plan and history they had.</div>
+  <div class="row"><button class="btn" id="nmn">Set up a new plan</button></div>
+  <div class="row"><button class="btn alt" id="nmk">Keep my current plan</button></div>`;
+  $("#modal").classList.add("on");
+  $("#back").onclick=close;
+  const advance=async()=>{for(let m=1;m<next;m++)if(!logs[`_hist|${m}`])await wPut({k:`_hist|${m}`,...snapPlan()});
+    wkWeek++;await wPut({k:"_meta",week:wkWeek})};
+  $("#nmk").onclick=async()=>{await advance();close();render()};
+  $("#nmn").onclick=async()=>{await advance();
+    close();flow="meso";draft=null;exDay=0;view="setup";render()};
+}
 function openDeload(){
   const close=()=>$("#modal").classList.remove("on"),m=mesoOf(wkWeek);
   $("#sheet").innerHTML=`<div class="shr"><button class="chip" id="back">‹ Back</button><h2>Mesocycle ${m} complete</h2></div>
@@ -432,12 +457,18 @@ function renderBw(m){
 // ---------- home + setup ----------
 let sched={MON:"REST",TUE:"TUE",WED:"WED",THU:"THU",FRI:"REST",SAT:"SAT",SUN:"SUN"}, draft=null;
 const sess=i=>sched[DAYS[i]]||"REST";
+// Each mesocycle keeps the plan it used: a saved snapshot (_hist|m) for past mesos, otherwise the live plan.
+function snapPlan(){const ex={},t={};Object.keys(PLAN).forEach(id=>{ex[id]=PLAN[id].x.slice();t[id]=PLAN[id].t});return {sched:{...sched},ex,t}}
+function planAt(w){const h=logs[`_hist|${mesoOf(w)}`];
+  if(!h)return {sess:i=>sched[DAYS[i]]||"REST",get:id=>PLAN[id]||PLAN.REST,sched};
+  return {sess:i=>h.sched[DAYS[i]]||"REST",get:id=>h.ex[id]?{t:h.t[id],x:h.ex[id]}:PLAN.REST,sched:h.sched}}
+let flow=null; // "onb" (first-time setup) or "meso" (new mesocycle setup)
 const FULL=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const AB={TUE:"LOW",WED:"PSH",THU:"PLL",SAT:"POS",SUN:"UPR"};
 function sessDone(sid){const p=`${wkWeek}|${sid}|`;return Object.keys(logs).some(k=>k.startsWith(p)&&(logs[k].sets||[]).some(x=>num(x.r)>0))}
 function renderHome(m){
-  const di=(new Date().getDay()+6)%7,sid=sess(di),ss=PLAN[sid],rest=!ss.x.length;
-  const planned=DAYS.filter(d=>sched[d]!=="REST"),done=planned.filter(d=>sessDone(sched[d])).length;
+  const pa=planAt(wkWeek),sc=pa.sched,di=(new Date().getDay()+6)%7,sid=pa.sess(di),ss=pa.get(sid),rest=!ss.x.length;
+  const planned=DAYS.filter(d=>(sc[d]||"REST")!=="REST"),done=planned.filter(d=>sessDone(sc[d])).length;
   const es=Object.keys(logs).filter(k=>k.startsWith("bw|")).map(k=>logs[k]).sort((a,b)=>a.d<b.d?-1:1);
   const last=es[es.length-1],prev=es[es.length-2],f=v=>Math.round(v*10)/10,unit="kg";
   const nsets=ss.x.reduce((a,s)=>a+ +s.split("|")[4],0),started=sessDone(sid);
@@ -449,7 +480,7 @@ function renderHome(m){
   ${rest?`<div class="meta">${sid==="REST"?"Recover, eat well and sleep.":"No exercises yet. Add some in Settings → Edit exercises."}</div>`:`<div class="meta">${ss.x.length} exercises · ${nsets} sets${started?" · in progress":""}</div><button class="btn" id="go" style="margin-top:10px">${started?"Continue workout":"Start workout"}</button>`}</div>
 ${waterCard()}
   <div class="ex"><div class="exh"><div><h3>${wkLabel(wkWeek)}</h3><div class="meta" style="margin:0">Mesocycle ${mesoOf(wkWeek)}</div></div><span class="meta">${done}/${planned.length} sessions done</span></div>
-  <div class="days">${DAYS.map((d,i)=>{const s=sched[d]||"REST",st=s==="REST"?"rs":sessDone(s)?"dn":"pl";
+  <div class="days">${DAYS.map((d,i)=>{const s=sc[d]||"REST",st=s==="REST"?"rs":sessDone(s)?"dn":"pl";
     return `<button class="dd ${st} ${i===di?"td":""}" data-i="${i}"><span>${d[0]+d.slice(1).toLowerCase()}</span><b>${st==="dn"?"✓":st==="rs"?"R":AB[s]||"•"}</b></button>`}).join("")}</div></div>
   <div class="stats">
    <div class="stat" data-go="bw"><div class="l">Body weight</div><div class="v">${last?f(last.v)+" "+unit:"—"}</div><div class="l">${last&&prev?(dv>0?"▲ ":dv<0?"▼ ":"")+f(Math.abs(dv))+" since last":last?fmt(last.d):"Tap to add"}</div></div>
@@ -465,18 +496,22 @@ ${waterCard()}
 function renderSetup(m){
   if(!draft)draft={...sched};
   const opts=["REST",...BASE,"CUSTOM"];
-  m.innerHTML=`<h2 style="margin:6px 0 4px;font-size:22px">Set up your week</h2>
+  const intro=flow==="onb"?`<div class="meta">STEP 1 OF 2</div><h2 style="margin:2px 0 4px;font-size:22px">Choose your training days</h2>`
+    :flow==="meso"?`<div class="meta">MESOCYCLE ${mesoOf(wkWeek)} · STEP 1 OF 2</div><h2 style="margin:2px 0 4px;font-size:22px">Set up your new plan</h2>`
+    :`<h2 style="margin:6px 0 4px;font-size:22px">Set up your week</h2>`;
+  m.innerHTML=`${intro}
   <div class="sub" style="margin-bottom:12px">Choose what you train each day and which days are rest. Each session can be used once a week. Picking one that’s already used swaps the two days.</div>
   <div class="ex">${DAYS.map((d,i)=>`<div class="row" style="align-items:center"><div style="flex:1;font-weight:600">${FULL[i]}</div>
    <select data-d="${d}" style="flex:1.5">${opts.map(o=>`<option value="${o}" ${draft[d]===o||(o==="CUSTOM"&&String(draft[d]).startsWith("C_"))?"selected":""}>${o==="REST"?"Rest day":o==="CUSTOM"?"Custom workout":PLAN[o].t}</option>`).join("")}</select></div>`).join("")}</div>
-  <button class="btn" id="ss">Save</button>
-  <button class="btn alt" id="sc" style="margin-top:8px">Cancel</button>`;
+  <button class="btn" id="ss">${flow?"Next: choose exercises":"Save"}</button>
+  <button class="btn alt" id="sc" style="margin-top:8px">${flow==="onb"?"Skip, use the default plan":flow==="meso"?"Skip, keep my current plan":"Cancel"}</button>`;
   m.querySelectorAll("select[data-d]").forEach(el=>el.onchange=()=>{
     const d=el.dataset.d,v=el.value==="CUSTOM"?"C_"+d:el.value;
     if(v!=="REST"&&!v.startsWith("C_"))DAYS.forEach(o=>{if(o!==d&&draft[o]===v)draft[o]=draft[d]});
     draft[d]=v;render()});
-  $("#ss").onclick=async()=>{sched={...draft};await wPut({k:"_sched",s:sched});Object.values(sched).forEach(id=>{if(id!=="REST"&&!PLAN[id])PLAN[id]={t:"Custom workout",x:[]}});await savePlan();draft=null;view="settings";render()};
-  $("#sc").onclick=()=>{draft=null;view="settings";render()};
+  $("#ss").onclick=async()=>{if(flow==="meso")for(const k of Object.keys(logs))if((k.startsWith("sub|")||k.startsWith("sets|"))&&atWeek(k,wkWeek)!=null)await setFrom(k,wkWeek,null);
+    sched={...draft};await wPut({k:"_sched",s:sched});Object.values(sched).forEach(id=>{if(id!=="REST"&&!PLAN[id])PLAN[id]={t:"Custom workout",x:[]}});await savePlan();draft=null;view=flow?"editex":"settings";render()};
+  $("#sc").onclick=()=>{draft=null;view=flow?"home":"settings";flow=null;render()};
 }
 
 // ---------- water ----------
@@ -585,7 +620,7 @@ function pickEx(cb){
 }
 function renderEditEx(m){
   const sid=sess(exDay),ss=PLAN[sid],rest=sid==="REST";
-  let h=`<h2 style="margin:6px 0 4px;font-size:22px">Edit exercises</h2><div class="sub" style="margin-bottom:8px">Add, remove or reorder the exercises for each day.</div>
+  let h=`${flow?`<div class="meta">${flow==="meso"?`MESOCYCLE ${mesoOf(wkWeek)} · `:""}STEP 2 OF 2</div><h2 style="margin:2px 0 4px;font-size:22px">Choose your exercises</h2>`:`<h2 style="margin:6px 0 4px;font-size:22px">Edit exercises</h2>`}<div class="sub" style="margin-bottom:8px">Add, remove or reorder the exercises for each day.${flow?" Tap each day along the top.":""}</div>
   <div class="chips">${DAYS.map((d,i)=>`<button class="chip ${i===exDay?"on":""}" data-i="${i}">${d[0]+d.slice(1).toLowerCase()}</button>`).join("")}</div>`;
   if(rest)h+=`<div class="ex"><b>${FULL[exDay]} is a rest day</b><div class="meta">Set this day to a workout first, then you can add exercises.</div><button class="btn alt" id="cw2" style="margin-top:8px">Set up your week</button></div>`;
   else{
@@ -595,7 +630,7 @@ function renderEditEx(m){
     <div class="row" style="margin:8px 0 0"><div style="flex:1"><label>Sets</label><input type="text" inputmode="numeric" data-i="${i}" data-f="4" value="${esc(e[4])}"></div><div style="flex:1"><label>Reps</label><input type="text" data-i="${i}" data-f="5" value="${esc(e[5])}"></div></div></div>`}).join("");
     h+=`<button class="btn" id="addx">+ Add exercise</button>`;
   }
-  m.innerHTML=h+`<button class="btn alt" id="bk2" style="margin-top:8px">Done</button>`;
+  m.innerHTML=h+`<button class="btn ${flow?"":"alt"}" id="bk2" style="margin-top:8px">${flow?"Finish":"Done"}</button>`;
   m.querySelectorAll(".chips .chip").forEach(b=>b.onclick=()=>{exDay=+b.dataset.i;render()});
   if(rest){$("#cw2").onclick=()=>{draft=null;view="setup";render()}}
   else{
@@ -608,7 +643,7 @@ function renderEditEx(m){
     $("#addx").onclick=()=>pickEx(nm=>{ss.x.push(`N${Math.floor(Math.random()*1e7)}|${nm}|3010|90 sec|3|8-12|`);savePlan();render()});
     if($("#wn"))$("#wn").oninput=e=>{ss.t=e.target.value.trim()||"Custom workout";savePlan()};
   }
-  $("#bk2").onclick=()=>{view="settings";render()};
+  $("#bk2").onclick=()=>{view=flow?"home":"settings";flow=null;render()};
 }
 
 // ---------- events ----------
@@ -633,7 +668,8 @@ $("#file").onchange=async e=>{
 // ---------- offline support + persistence ----------
 if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-openDB().then(async()=>{await loadLogs();if(logs._sched)sched=logs._sched.s;applyPlan();view="home";load()});
+openDB().then(async()=>{await loadLogs();if(logs._sched)sched=logs._sched.s;applyPlan();view="home";await load();
+  if(!logs._onb&&!logs._sched&&!Object.keys(logs).some(k=>/^\d+\|/.test(k)))openWelcome()});
 </script>
 </body>
 </html>

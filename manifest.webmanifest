@@ -1,6 +1,6 @@
 {
-  "name": "Progress",
-  "short_name": "Progress",
+  "name": "Physiq",
+  "short_name": "Physiq",
   "description": "Track workouts, body weight and progress photos. Everything stays on your device.",
   "start_url": "./",
   "scope": "./",

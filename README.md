@@ -1,4 +1,4 @@
-# Progress
+# Physiq
 
 A phone-friendly fitness tracker: weekly workout plan with set logging, lift progress charts, body-weight log, progress photos and a before/after compare slider.
 

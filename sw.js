@@ -1,6 +1,6 @@
 // Service worker: lets the app open with no internet connection.
 // Bump VERSION whenever you change index.html or other files so phones pick up the update.
-const VERSION = "progress-v23";
+const VERSION = "progress-v24";
 const FILES = [
   "./",
   "./index.html",
@@ -23,16 +23,20 @@ self.addEventListener("activate", e => {
   );
 });
 
-// Network first (so updates show up), falling back to the cached copy when offline.
+// Network first (so updates show up), falling back to the cached copy when offline
+// or when the site returns an error (e.g. a 404 while hosting is down).
+// Only good responses are cached, so an error page never replaces the saved app.
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET" || new URL(e.request.url).origin !== location.origin) return;
+  const fallback = () => caches.match(e.request).then(r => r || caches.match("./index.html"));
   e.respondWith(
     fetch(e.request)
       .then(res => {
+        if (!res.ok) return fallback().then(r => r || res);
         const copy = res.clone();
         caches.open(VERSION).then(c => c.put(e.request, copy));
         return res;
       })
-      .catch(() => caches.match(e.request).then(r => r || caches.match("./index.html")))
+      .catch(fallback)
   );
 });

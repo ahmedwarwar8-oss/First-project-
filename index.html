@@ -98,6 +98,17 @@ nav button i{display:flex;justify-content:center;font-style:normal;margin-bottom
 .stat .l{font-size:12px;color:var(--muted)}
 .mv,.rmx{padding:4px 10px;font-size:12px}
 .dlb{border:2px solid var(--accent)}
+.shead{display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px}
+.shead h2{margin:0;font-size:28px}
+.sgh{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:22px 16px 6px}
+.sg{background:var(--card);border-radius:12px;overflow:hidden}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:50px;padding:0 10px 0 14px;margin:0;border:0;background:none;color:var(--text);font-family:inherit;font-size:16px;text-align:left;position:relative;cursor:pointer}
+.srow+.srow::before{content:"";position:absolute;top:0;left:56px;right:0;border-top:1px solid var(--line)}
+.srow:active{background:var(--line)}
+.sl{display:flex;align-items:center;gap:12px}
+.sic{width:29px;height:29px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.sv{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:15px;white-space:nowrap}
+.sgf{font-size:12.5px;color:var(--muted);margin:7px 16px 0;line-height:1.4}
 .brand{display:flex;align-items:center;gap:10px}
 .logo{width:34px;height:34px;flex:0 0 auto;display:block}
 header{min-height:62px}
@@ -580,17 +591,34 @@ $("#rfile").onchange=async e=>{
 
 // ---------- settings ----------
 function renderSettings(m){
-  m.innerHTML=`<h2 style="margin:6px 0 10px;font-size:22px">Settings</h2>
-  <div class="ex"><h3>Water</h3><div style="margin-top:8px"><label>Daily goal (litres)</label><input type="text" inputmode="decimal" id="wg" value="${waterGoal()/1000}" placeholder="e.g. 3.5"></div></div>
-  <button class="btn alt" id="cw">Set up your week</button>
-  <button class="btn alt" id="ee" style="margin-top:8px">Edit exercises</button>
-  <div class="ex" style="margin-top:10px"><h3>Backup &amp; restore</h3>
-  <div class="meta" style="margin:4px 0 10px">Save all your photos, workouts, weights and water to a file. Keep it in Files or iCloud Drive, and use Restore to load it back on this or another phone.</div>
-  <div class="row" style="margin:0"><button class="btn" id="bkup">Back up</button><label class="btn alt" for="rfile" style="text-align:center">Restore</label></div>
-  <div class="meta" id="bkmsg" style="margin-top:8px">${lastBackup()}</div></div>
-  <button class="btn" id="bk" style="margin-top:8px">Done</button>
-  <p class="note">Everything stays on this device only. Nothing is ever uploaded.<br>All weights are in kilograms (kg).</p>`;
-  $("#wg").onchange=async e=>{e.target.value=(await setWaterGoal(e.target.value))/1000};
+  const ic=(bg,p)=>`<span class="sic" style="background:${bg}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg></span>`;
+  const chev=`<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>`;
+  const row=(id,icon,label,val,tag="button",extra="")=>`<${tag} class="srow" id="${id}" ${extra}><span class="sl">${icon}${label}</span><span class="sv">${val}${chev}</span></${tag}>`;
+  m.innerHTML=`<div class="shead"><h2>Settings</h2><button class="chip" id="bk">Done</button></div>
+  <div class="sgh">Training</div>
+  <div class="sg">
+    ${row("cw",ic("var(--accent)",'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>'),"Set up your week","")}
+    ${row("ee",ic("#ff9500",'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>'),"Edit exercises","")}
+  </div>
+  <div class="sgf">Mesocycle ${mesoOf(wkWeek)} · ${wkLabel(wkWeek)}</div>
+  <div class="sgh">Water</div>
+  <div class="sg">
+    ${row("wgoal2",ic("#2b8fd6",'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>'),"Daily goal",litres(waterGoal()))}
+  </div>
+  <div class="sgh">Data</div>
+  <div class="sg">
+    ${row("bkup",ic("#34c759",'<path d="M12 15V4M7 9l5-5 5 5M5 20h14"/>'),"Back up","")}
+    ${row("rst",ic("#8e8e93",'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'),"Restore from backup","","label",'for="rfile"')}
+  </div>
+  <div class="sgf" id="bkmsg">${lastBackup()}</div>
+  <div class="sgh">About</div>
+  <div class="sg">
+    <div class="srow"><span class="sl">${ic("#5856d6",'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>')}Units</span><span class="sv" style="padding-right:4px">Metric (kg, L)</span></div>
+    <div class="srow"><span class="sl">${ic("#636366",'<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>')}Privacy</span><span class="sv" style="padding-right:4px">On this device only</span></div>
+  </div>
+  <div class="sgf">Everything stays on this device. Nothing is ever uploaded. Back up regularly so you don’t lose your data.</div>
+  <div style="height:16px"></div>`;
+  $("#wgoal2").onclick=openWaterGoal;
   $("#cw").onclick=()=>{draft=null;view="setup";render()};
   $("#ee").onclick=()=>{view="editex";render()};
   $("#bk").onclick=()=>{view="home";render()};

@@ -270,6 +270,10 @@ const num=v=>{const n=parseFloat(String(v).replace(",","."));return isNaN(n)?0:n
 function totals(){const dn=sess(wkDay);let sets=0,vol=0;
   PLAN[dn].x.forEach(s=>{const lg=logs[`${wkWeek}|${dn}|${s.split("|")[0]}`];if(lg)lg.sets.forEach(x=>{if(num(x.r)>0){sets++;vol+=num(x.w)*num(x.r)}})});
   return `${sets} sets logged · volume ${Math.round(vol)} kg`}
+// Changes (swaps, set counts) apply from the week they are made in onward; earlier weeks keep their history.
+const hist=k=>{const r=logs[k];if(!r)return [];return r.h||(r.name!=null?[{w:1,v:r.name}]:[])};
+const atWeek=(k,w)=>{let v=null;hist(k).slice().sort((a,b)=>a.w-b.w).forEach(x=>{if(x.w<=w)v=x.v});return v};
+const setFrom=(k,w,v)=>wPut({k,h:hist(k).filter(x=>x.w<w).concat({w,v})});
 function renderWk(m){
   const dn=sess(wkDay),d=PLAN[dn],sid0=dn;
   let h=`<div class="wkbar"><button class="sm" id="wm">‹</button><div><b style="font-size:18px">Week ${wkWeek}</b><div class="sub">Mesocycle week</div></div><button class="sm" id="wp">›</button></div>
@@ -277,15 +281,15 @@ function renderWk(m){
   <h2>${d.t}</h2>`;
   if(!d.x.length)h+=sid0==="REST"?`<div class="empty">Rest and recover</div>`:`<div class="empty">No exercises yet.<br>Add some in Settings → Edit exercises.</div>`;
   d.x.forEach(s=>{
-    const e=s.split("|"),key=`${wkWeek}|${dn}|${e[0]}`,lg=logs[key]||{sets:[]},n=Math.max(+e[4],lg.sets.length);
-    const sub=logs[`sub|${dn}|${e[0]}`],name=sub?sub.name:e[1];
+    const e=s.split("|"),key=`${wkWeek}|${dn}|${e[0]}`,lg=logs[key]||{sets:[]},sk=`sets|${dn}|${e[0]}`,planned=atWeek(sk,wkWeek)??+e[4],n=Math.max(planned,lg.sets.length);
+    const name=atWeek(`sub|${dn}|${e[0]}`,wkWeek)||e[1],sub=name!==e[1];
     let prev="";for(let w=wkWeek-1;w>=1&&!prev;w--){const p=logs[`${w}|${dn}|${e[0]}`];
       if(p&&(p.n||e[1])===name){const t=p.sets.filter(x=>num(x.r)>0).map(x=>`${x.w||0} kg × ${x.r}`).join(", ");if(t)prev=`Week ${w}: ${t}`}}
-    h+=`<div class="ex"><div class="exh"><h3>${esc(name)}</h3><button class="chip swap" data-d="${dn}" data-s="${e[0]}">Swap</button></div><div class="meta">${e[4]} sets · ${e[5]} reps · RIR 3 · Tempo ${e[2]} · Rest ${e[3]}</div>
+    h+=`<div class="ex"><div class="exh"><h3>${esc(name)}</h3><button class="chip swap" data-d="${dn}" data-s="${e[0]}">Swap</button></div><div class="meta">${n} sets · ${e[5]} reps · RIR 3 · Tempo ${e[2]} · Rest ${e[3]}</div>
     ${sub||!e[6]?"":`<div class="meta">${e[6]}</div>`}${prev?`<div class="hint">${prev}</div>`:""}`;
     for(let i=0;i<n;i++){const x=lg.sets[i]||{};
       h+=`<div class="set"><span>Set ${i+1}</span><input type="text" inputmode="decimal" placeholder="kg" data-k="${key}" data-i="${i}" data-f="w" data-nm="${esc(name)}" value="${x.w??""}"><b>×</b><input type="text" inputmode="numeric" placeholder="Reps" data-k="${key}" data-i="${i}" data-f="r" data-nm="${esc(name)}" value="${x.r??""}"></div>`}
-    h+=`<button class="chip addset" data-k="${key}" data-n="${n}" data-nm="${esc(name)}">+ Set</button>${n>+e[4]?`<button class="chip rmset" data-k="${key}" data-n="${n}" data-nm="${esc(name)}">− Set</button>`:""}</div>`});
+    h+=`<button class="chip addset" data-sk="${sk}" data-n="${n}">+ Set</button>${n>1?`<button class="chip rmset" data-k="${key}" data-sk="${sk}" data-n="${n}">− Set</button>`:""}</div>`});
   if(d.x.length)h+=`<div class="ex"><b id="tot">${totals()}</b></div>`;
   m.innerHTML=h;
   $("#wm").onclick=()=>{wkWeek=Math.max(1,wkWeek-1);wPut({k:"_meta",week:wkWeek});render()};
@@ -295,10 +299,9 @@ function renderWk(m){
     const k=el.dataset.k,i=+el.dataset.i,lg=logs[k]||{k,sets:[]};
     lg.sets=Array.from({length:Math.max(lg.sets.length,i+1)},(_,j)=>lg.sets[j]||{});
     lg.sets[i][el.dataset.f]=el.value;lg.n=el.dataset.nm;wPut(lg);const t=$("#tot");if(t)t.textContent=totals()});
-  m.querySelectorAll(".addset").forEach(b=>b.onclick=()=>{
-    const k=b.dataset.k,n=+b.dataset.n,lg=logs[k]||{k,sets:[]};
-    lg.n=b.dataset.nm;lg.sets=Array.from({length:n+1},(_,j)=>lg.sets[j]||{});wPut(lg);render()});
-  m.querySelectorAll(".rmset").forEach(b=>b.onclick=()=>{const k=b.dataset.k,n=+b.dataset.n,lg=logs[k]||{k,sets:[]};lg.n=b.dataset.nm;lg.sets=Array.from({length:n-1},(_,j)=>lg.sets[j]||{});wPut(lg);render()});
+  m.querySelectorAll(".addset").forEach(b=>b.onclick=async()=>{await setFrom(b.dataset.sk,wkWeek,+b.dataset.n+1);render()});
+  m.querySelectorAll(".rmset").forEach(b=>b.onclick=async()=>{const n=+b.dataset.n-1,lg=logs[b.dataset.k];
+    await setFrom(b.dataset.sk,wkWeek,n);if(lg&&lg.sets.length>n){lg.sets=lg.sets.slice(0,n);await wPut(lg)}render()});
   m.querySelectorAll(".swap").forEach(b=>b.onclick=()=>openSwap(b.dataset.d,b.dataset.s));
 }
 
@@ -320,7 +323,7 @@ const esc=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g
 function wDel(k){delete logs[k];return new Promise(res=>{if(!hasW()){delete lmem[k];return res()}const q=db.transaction("w","readwrite").objectStore("w").delete(k);q.onsuccess=q.onerror=()=>res()})}
 function openSwap(dn,slot){
   const k=`sub|${dn}|${slot}`,close=()=>$("#modal").classList.remove("on");
-  $("#sheet").innerHTML=`<div class="shd"><div class="shr"><button class="chip" id="back">‹ Back</button><h2>Swap exercise</h2></div><input type="text" id="sq" placeholder="Search, or type your own" autocomplete="off"></div><div id="sl" style="margin-top:8px"></div>
+  $("#sheet").innerHTML=`<div class="shd"><div class="shr"><button class="chip" id="back">‹ Back</button><h2>Swap exercise</h2></div><div class="meta" style="margin:-4px 0 8px">Applies to Week ${wkWeek} and every week after. Earlier weeks stay as they were.</div><input type="text" id="sq" placeholder="Search, or type your own" autocomplete="off"></div><div id="sl" style="margin-top:8px"></div>
   <div class="row"><button class="btn alt" id="sr">Reset to program</button></div><div class="row"><button class="btn alt" id="sx">Cancel</button></div>`;
   $("#modal").classList.add("on");
   const draw=()=>{const q=$("#sq").value.trim(),ql=q.toLowerCase();let h=q?`<button class="opt" data-n="${esc(q)}">Use “${esc(q)}”</button>`:"";
@@ -328,8 +331,8 @@ function openSwap(dn,slot){
       if(it.length)h+=`<div class="gh">${g}</div>`+it.map(x=>`<button class="opt" data-n="${esc(x)}">${esc(x)}</button>`).join("")}
     $("#sl").innerHTML=h};
   $("#sq").oninput=draw;draw();
-  $("#sl").onclick=async e=>{const b=e.target.closest(".opt");if(b){await wPut({k,name:b.dataset.n});close();render()}};
-  $("#sr").onclick=async()=>{await wDel(k);close();render()};
+  $("#sl").onclick=async e=>{const b=e.target.closest(".opt");if(b){await setFrom(k,wkWeek,b.dataset.n);close();render()}};
+  $("#sr").onclick=async()=>{await setFrom(k,wkWeek,null);close();render()};
   $("#sx").onclick=$("#back").onclick=close;
 }
 

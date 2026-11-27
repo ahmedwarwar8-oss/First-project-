@@ -779,6 +779,8 @@ function pickEx(cb){
   $("#sl").onclick=e=>{const b=e.target.closest(".opt");if(b){close();cb(b.dataset.n)}};
   $("#sx").onclick=$("#back").onclick=close;
 }
+const RESTS=["30 sec","45 sec","1 min","75 sec","90 sec","2 min","2.5 min","3 min","4 min","5 min"];
+const restOpts=cur=>{cur=cur||"90 sec";const l=RESTS.includes(cur)?RESTS:[cur,...RESTS];return l.map(r=>`<option ${r===cur?"selected":""}>${esc(r)}</option>`).join("")};
 function renderEditEx(m){
   const sid=sess(exDay),ss=PLAN[sid],rest=sid==="REST";
   let h=`${flow?`<div class="meta">${flow==="meso"?`MESOCYCLE ${mesoOf(wkWeek)} · `:""}STEP 2 OF 2</div><h2 style="margin:2px 0 4px;font-size:22px">Choose your exercises</h2>`:`<h2 style="margin:6px 0 4px;font-size:22px">Edit exercises</h2>`}<div class="sub" style="margin-bottom:8px">Add, remove or reorder the exercises for each day.${flow?" Tap each day along the top.":""}</div>
@@ -788,16 +790,16 @@ function renderEditEx(m){
     h+=`<h2>${esc(ss.t)}</h2>`;
     if(sid.startsWith("C_"))h+=`<div style="margin-bottom:10px"><label>Workout name</label><input type="text" id="wn" value="${esc(ss.t)}"></div>`;
     h+=ss.x.map((s,i)=>{const e=s.split("|");return `<div class="ex"><div class="exh"><b>${esc(e[1])}</b><div style="display:flex;gap:6px"><button class="chip mv" data-i="${i}" data-d="-1">↑</button><button class="chip mv" data-i="${i}" data-d="1">↓</button><button class="chip rmx" data-i="${i}">Remove</button></div></div>
-    <div class="row" style="margin:8px 0 0"><div style="flex:1"><label>Sets</label><input type="text" inputmode="numeric" data-i="${i}" data-f="4" value="${esc(e[4])}"></div><div style="flex:1"><label>Reps</label><input type="text" data-i="${i}" data-f="5" value="${esc(e[5])}"></div></div><div class="row" style="margin:8px 0 0"><div style="flex:1"><label>RIR</label><input type="text" inputmode="decimal" data-i="${i}" data-f="7" placeholder="3" value="${esc(e[7]||"3")}"></div><div style="flex:1"><label>Tempo</label><input type="text" inputmode="numeric" data-i="${i}" data-f="2" placeholder="3010" value="${esc(e[2]||"")}"></div></div></div>`}).join("");
+    <div class="row" style="margin:8px 0 0"><div style="flex:1"><label>Sets</label><input type="text" inputmode="numeric" data-i="${i}" data-f="4" value="${esc(e[4])}"></div><div style="flex:1"><label>Reps</label><input type="text" data-i="${i}" data-f="5" value="${esc(e[5])}"></div></div><div class="row" style="margin:8px 0 0"><div style="flex:1"><label>RIR</label><input type="text" inputmode="decimal" data-i="${i}" data-f="7" placeholder="3" value="${esc(e[7]||"3")}"></div><div style="flex:1"><label>Tempo</label><input type="text" inputmode="numeric" data-i="${i}" data-f="2" placeholder="3010" value="${esc(e[2]||"")}"></div></div><div style="margin-top:8px"><label>Rest between sets</label><select data-i="${i}" data-f="3">${restOpts(e[3])}</select></div></div>`}).join("");
     h+=`<button class="btn" id="addx">+ Add exercise</button>`;
   }
   m.innerHTML=h+`<button class="btn ${flow?"":"alt"}" id="bk2" style="margin-top:8px">${flow?"Finish":"Done"}</button>`;
   m.querySelectorAll(".chips .chip").forEach(b=>b.onclick=()=>{exDay=+b.dataset.i;render()});
   if(rest){$("#cw2").onclick=()=>{draft=null;view="setup";render()}}
   else{
-    m.querySelectorAll("input[data-f]").forEach(el=>el.onchange=()=>{
+    m.querySelectorAll("input[data-f],select[data-f]").forEach(el=>el.onchange=()=>{
       const i=+el.dataset.i,f=+el.dataset.f,e=ss.x[i].split("|");
-      let v=el.value.trim().replace(/\|/g,"/");if(f===4)v=String(Math.max(1,parseInt(v)||1));if(f===5&&!v)v="8-12";if(f===7&&!v)v="3";if(f===2&&!v)v="3010";while(e.length<8)e.push("");
+      let v=el.value.trim().replace(/\|/g,"/");if(f===4)v=String(Math.max(1,parseInt(v)||1));if(f===5&&!v)v="8-12";if(f===7&&!v)v="3";if(f===2&&!v)v="3010";if(f===3&&!v)v="90 sec";while(e.length<8)e.push("");
       e[f]=v;ss.x[i]=e.join("|");savePlan();render()});
     m.querySelectorAll(".mv").forEach(b=>b.onclick=()=>{const i=+b.dataset.i,j=i+ +b.dataset.d;if(j<0||j>=ss.x.length)return;[ss.x[i],ss.x[j]]=[ss.x[j],ss.x[i]];savePlan();render()});
     m.querySelectorAll(".rmx").forEach(b=>b.onclick=()=>{if(!b.dataset.a){b.dataset.a=1;b.textContent="Confirm";b.classList.add("on");return}ss.x.splice(+b.dataset.i,1);savePlan();render()});

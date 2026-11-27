@@ -97,6 +97,7 @@ nav button i{display:flex;justify-content:center;font-style:normal;margin-bottom
 .stat .v{font-size:22px;font-weight:700;margin:2px 0}
 .stat .l{font-size:12px;color:var(--muted)}
 .mv,.rmx{padding:4px 10px;font-size:12px}
+.dlb{border:2px solid var(--accent)}
 .brand{display:flex;align-items:center;gap:10px}
 .logo{width:34px;height:34px;flex:0 0 auto;display:block}
 header{min-height:62px}
@@ -262,6 +263,10 @@ SUN:{t:"Upper + Arms",x:[
 "G1|Barbell Curl|3010|1 min|1|6-10|Elbows close, squeeze at the top.",
 "H1|V Bar Tricep Pushdowns|3111|1 min|2|10-12|Elbows close, strong contraction, controlled lowering."]}
 };
+// Mesocycles: 12 training weeks, then 1 deload week (13-week cycle). wkWeek is a running week count.
+const MESO=12,CYC=MESO+1,mesoOf=w=>Math.floor((w-1)/CYC)+1,posOf=w=>(w-1)%CYC+1,isDeload=w=>posOf(w)===CYC;
+const wkLabel=w=>isDeload(w)?"Deload week":`Week ${posOf(w)} of ${MESO}`;
+const wkShort=w=>(mesoOf(w)>1?`M${mesoOf(w)} `:"")+(isDeload(w)?"Deload":`W${posOf(w)}`);
 let wkWeek=1, wkDay=(new Date().getDay()+6)%7, logs={}, lmem={};
 const hasW=()=>db&&db.objectStoreNames.contains("w");
 function wAll(){return new Promise(res=>{if(!hasW())return res(Object.values(lmem));const q=db.transaction("w").objectStore("w").getAll();q.onsuccess=()=>res(q.result);q.onerror=()=>res([])})}
@@ -277,24 +282,26 @@ const atWeek=(k,w)=>{let v=null;hist(k).slice().sort((a,b)=>a.w-b.w).forEach(x=>
 const setFrom=(k,w,v)=>wPut({k,h:hist(k).filter(x=>x.w<w).concat({w,v})});
 function renderWk(m){
   const dn=sess(wkDay),d=PLAN[dn],sid0=dn;
-  let h=`<div class="wkbar"><button class="sm" id="wm">‹</button><div><b style="font-size:18px">Week ${wkWeek}</b><div class="sub">Mesocycle week</div></div><button class="sm" id="wp">›</button></div>
+  let h=`<div class="wkbar"><button class="sm" id="wm">‹</button><div><b style="font-size:18px">${wkLabel(wkWeek)}</b><div class="sub">Mesocycle ${mesoOf(wkWeek)}</div></div><button class="sm" id="wp">›</button></div>
   <div class="chips">${DAYS.map((x,i)=>`<button class="chip ${i===wkDay?"on":""}" data-i="${i}">${x[0]+x.slice(1).toLowerCase()}</button>`).join("")}</div>
   <h2>${d.t}</h2>`;
+  const dl=isDeload(wkWeek);
+  if(dl)h+=`<div class="ex dlb"><b>Deload week</b><div class="meta">Recover before Mesocycle ${mesoOf(wkWeek)+1}. Do half the usual sets at about 50–60% of your normal weights, and stop well short of failure (RIR 4–5).</div></div>`;
   if(!d.x.length)h+=sid0==="REST"?`<div class="empty">Rest and recover</div>`:`<div class="empty">No exercises yet.<br>Add some in Settings → Edit exercises.</div>`;
   d.x.forEach(s=>{
-    const e=s.split("|"),key=`${wkWeek}|${dn}|${e[0]}`,lg=logs[key]||{sets:[]},sk=`sets|${dn}|${e[0]}`,planned=atWeek(sk,wkWeek)??+e[4],n=Math.max(planned,lg.sets.length);
+    const e=s.split("|"),key=`${wkWeek}|${dn}|${e[0]}`,lg=logs[key]||{sets:[]},sk=`sets|${dn}|${e[0]}`,base=atWeek(sk,wkWeek)??+e[4],planned=dl?Math.max(1,Math.ceil(base/2)):base,n=Math.max(planned,lg.sets.length);
     const name=atWeek(`sub|${dn}|${e[0]}`,wkWeek)||e[1],sub=name!==e[1];
-    let prev="";for(let w=wkWeek-1;w>=1&&!prev;w--){const p=logs[`${w}|${dn}|${e[0]}`];
-      if(p&&(p.n||e[1])===name){const t=p.sets.filter(x=>num(x.r)>0).map(x=>`${x.w||0} kg × ${x.r}`).join(", ");if(t)prev=`Week ${w}: ${t}`}}
-    h+=`<div class="ex"><div class="exh"><h3>${esc(name)}</h3><button class="chip swap" data-d="${dn}" data-s="${e[0]}">Swap</button></div><div class="meta">${n} sets · ${e[5]} reps · RIR 3 · Tempo ${e[2]} · Rest ${e[3]}</div>
+    let prev="";for(let w=wkWeek-1;w>=1&&!prev;w--){if(isDeload(w))continue;const p=logs[`${w}|${dn}|${e[0]}`];
+      if(p&&(p.n||e[1])===name){const t=p.sets.filter(x=>num(x.r)>0).map(x=>`${x.w||0} kg × ${x.r}`).join(", ");if(t)prev=`Last time (${wkShort(w)}): ${t}`}}
+    h+=`<div class="ex"><div class="exh"><h3>${esc(name)}</h3><button class="chip swap" data-d="${dn}" data-s="${e[0]}">Swap</button></div><div class="meta">${n} sets · ${e[5]} reps · RIR ${dl?"4–5":"3"} · Tempo ${e[2]} · Rest ${e[3]}</div>
     ${sub||!e[6]?"":`<div class="meta">${e[6]}</div>`}${prev?`<div class="hint">${prev}</div>`:""}`;
     for(let i=0;i<n;i++){const x=lg.sets[i]||{};
       h+=`<div class="set"><span>Set ${i+1}</span><input type="text" inputmode="decimal" placeholder="kg" data-k="${key}" data-i="${i}" data-f="w" data-nm="${esc(name)}" value="${x.w??""}"><b>×</b><input type="text" inputmode="numeric" placeholder="Reps" data-k="${key}" data-i="${i}" data-f="r" data-nm="${esc(name)}" value="${x.r??""}"></div>`}
-    h+=`<button class="chip addset" data-sk="${sk}" data-n="${n}">+ Set</button>${n>1?`<button class="chip rmset" data-k="${key}" data-sk="${sk}" data-n="${n}">− Set</button>`:""}</div>`});
+    h+=(dl?"":`<button class="chip addset" data-sk="${sk}" data-n="${n}">+ Set</button>${n>1?`<button class="chip rmset" data-k="${key}" data-sk="${sk}" data-n="${n}">− Set</button>`:""}`)+`</div>`});
   if(d.x.length)h+=`<div class="ex"><b id="tot">${totals()}</b></div>`;
   m.innerHTML=h;
   $("#wm").onclick=()=>{wkWeek=Math.max(1,wkWeek-1);wPut({k:"_meta",week:wkWeek});render()};
-  $("#wp").onclick=()=>{wkWeek++;wPut({k:"_meta",week:wkWeek});render()};
+  $("#wp").onclick=()=>{if(posOf(wkWeek)===MESO)return openDeload();wkWeek++;wPut({k:"_meta",week:wkWeek});render()};
   m.querySelectorAll(".chip[data-i]").forEach(b=>b.onclick=()=>{wkDay=+b.dataset.i;render()});
   m.querySelectorAll("input[data-k]").forEach(el=>el.oninput=()=>{
     const k=el.dataset.k,i=+el.dataset.i,lg=logs[k]||{k,sets:[]};
@@ -304,6 +311,18 @@ function renderWk(m){
   m.querySelectorAll(".rmset").forEach(b=>b.onclick=async()=>{const n=+b.dataset.n-1,lg=logs[b.dataset.k];
     await setFrom(b.dataset.sk,wkWeek,n);if(lg&&lg.sets.length>n){lg.sets=lg.sets.slice(0,n);await wPut(lg)}render()});
   m.querySelectorAll(".swap").forEach(b=>b.onclick=()=>openSwap(b.dataset.d,b.dataset.s));
+}
+
+function openDeload(){
+  const close=()=>$("#modal").classList.remove("on"),m=mesoOf(wkWeek);
+  $("#sheet").innerHTML=`<div class="shr"><button class="chip" id="back">‹ Back</button><h2>Mesocycle ${m} complete</h2></div>
+  <p>You've finished all ${MESO} weeks. Take a <b>deload week</b> before starting Mesocycle ${m+1}.</p>
+  <div class="meta">During the deload week you'll do half the usual sets at about 50–60% of your normal weights. It lets your body recover so you come back stronger.</div>
+  <div class="row"><button class="btn" id="dgo">Start deload week</button></div>
+  <div class="row"><button class="btn alt" id="dno">Stay on week ${MESO}</button></div>`;
+  $("#modal").classList.add("on");
+  $("#back").onclick=$("#dno").onclick=close;
+  $("#dgo").onclick=()=>{wkWeek++;wPut({k:"_meta",week:wkWeek});close();render()};
 }
 
 // ---------- exercise library (from your sheet) ----------
@@ -324,7 +343,7 @@ const esc=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g
 function wDel(k){delete logs[k];return new Promise(res=>{if(!hasW()){delete lmem[k];return res()}const q=db.transaction("w","readwrite").objectStore("w").delete(k);q.onsuccess=q.onerror=()=>res()})}
 function openSwap(dn,slot){
   const k=`sub|${dn}|${slot}`,close=()=>$("#modal").classList.remove("on");
-  $("#sheet").innerHTML=`<div class="shd"><div class="shr"><button class="chip" id="back">‹ Back</button><h2>Swap exercise</h2></div><div class="meta" style="margin:-4px 0 8px">Applies to Week ${wkWeek} and every week after. Earlier weeks stay as they were.</div><input type="text" id="sq" placeholder="Search, or type your own" autocomplete="off"></div><div id="sl" style="margin-top:8px"></div>
+  $("#sheet").innerHTML=`<div class="shd"><div class="shr"><button class="chip" id="back">‹ Back</button><h2>Swap exercise</h2></div><div class="meta" style="margin:-4px 0 8px">Applies from ${wkLabel(wkWeek).replace(" of 12","")} (Mesocycle ${mesoOf(wkWeek)}) onward. Earlier weeks stay as they were.</div><input type="text" id="sq" placeholder="Search, or type your own" autocomplete="off"></div><div id="sl" style="margin-top:8px"></div>
   <div class="row"><button class="btn alt" id="sr">Reset to program</button></div><div class="row"><button class="btn alt" id="sx">Cancel</button></div>`;
   $("#modal").classList.add("on");
   const draw=()=>{const q=$("#sq").value.trim(),ql=q.toLowerCase();let h=q?`<button class="opt" data-n="${esc(q)}">Use “${esc(q)}”</button>`:"";
@@ -343,7 +362,7 @@ function progData(){
   const base={};DAYS.forEach(d=>PLAN[d].x.forEach(s=>{const e=s.split("|");base[`${d}|${e[0]}`]=e[1]}));
   const out={};
   for(const k in logs){const pr=k.split("|");if(pr.length!==3||pr[0]==="sub")continue;
-    const w=+pr[0],lg=logs[k],nm=lg.n||base[`${pr[1]}|${pr[2]}`];if(!w||!nm)continue;
+    const w=+pr[0],lg=logs[k],nm=lg.n||base[`${pr[1]}|${pr[2]}`];if(!w||!nm||isDeload(w))continue;
     const ss=(lg.sets||[]).filter(x=>num(x.r)>0);if(!ss.length)continue;
     out[nm]=out[nm]||{};out[nm][w]=(out[nm][w]||[]).concat(ss)}
   return out}
@@ -363,11 +382,11 @@ function renderProg(m){
   const P=pts.map(p=>[X(p.w),Y(p[K])]);
   if(pts.length>1)g+=`<polyline fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round" points="${P.map(q=>q.join(",")).join(" ")}"/>`;
   P.forEach((q,i)=>{g+=`<circle cx="${q[0]}" cy="${q[1]}" r="4.5" fill="var(--accent)"/><text x="${q[0]}" y="${q[1]-10}" text-anchor="middle" font-size="11" font-weight="600" style="fill:var(--text)">${Math.round(pts[i][K])}</text>`});
-  pts.forEach(p=>{g+=`<text x="${X(p.w)}" y="${H-10}" text-anchor="middle" font-size="11" style="fill:var(--muted)">W${p.w}</text>`});
+  pts.forEach(p=>{g+=`<text x="${X(p.w)}" y="${H-10}" text-anchor="middle" font-size="11" style="fill:var(--muted)">${wkShort(p.w)}</text>`});
   const a=pts[0],z=pts[pts.length-1],dv=z[K]-a[K],pc=a[K]?Math.round(dv/a[K]*100):0;
   const arrow=v=>v>0?`<span style="color:#2fa84f">▲ ${Math.round(v)}</span>`:v<0?`<span style="color:var(--accent)">▼ ${Math.round(-v)}</span>`:`<span style="color:var(--muted)">–</span>`;
   let rows=`<div class="prow ph"><span>Week</span><span>Sets</span><span>Avg / set (kg)</span><span>Total (kg)</span></div>`;
-  pts.forEach((p,i)=>{const q=pts[i-1];rows+=`<div class="prow"><span>W${p.w}</span><span>${p.n}</span><span>${Math.round(p.av)} ${q?arrow(p.av-q.av):""}</span><span>${Math.round(p.vol)}</span></div>`});
+  pts.forEach((p,i)=>{const q=pts[i-1];rows+=`<div class="prow"><span>${wkShort(p.w)}</span><span>${p.n}</span><span>${Math.round(p.av)} ${q?arrow(p.av-q.av):""}</span><span>${Math.round(p.vol)}</span></div>`});
   m.innerHTML=`<label>Exercise</label><select id="ps">${names.map(n=>`<option value="${esc(n)}" ${n===progSel?"selected":""}>${esc(n)}</option>`).join("")}</select>
   <div class="ex" style="margin-top:12px"><div class="meta" style="margin-bottom:6px">Average volume moved per set (kg × reps)</div>
   <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">${g}</svg>
@@ -429,7 +448,7 @@ function renderHome(m){
   <div class="ex"><div class="meta">TODAY</div><h3 style="font-size:20px;margin:2px 0">${ss.t}</h3>
   ${rest?`<div class="meta">${sid==="REST"?"Recover, eat well and sleep.":"No exercises yet. Add some in Settings → Edit exercises."}</div>`:`<div class="meta">${ss.x.length} exercises · ${nsets} sets${started?" · in progress":""}</div><button class="btn" id="go" style="margin-top:10px">${started?"Continue workout":"Start workout"}</button>`}</div>
 ${waterCard()}
-  <div class="ex"><div class="exh"><h3>Week ${wkWeek}</h3><span class="meta">${done}/${planned.length} sessions done</span></div>
+  <div class="ex"><div class="exh"><div><h3>${wkLabel(wkWeek)}</h3><div class="meta" style="margin:0">Mesocycle ${mesoOf(wkWeek)}</div></div><span class="meta">${done}/${planned.length} sessions done</span></div>
   <div class="days">${DAYS.map((d,i)=>{const s=sched[d]||"REST",st=s==="REST"?"rs":sessDone(s)?"dn":"pl";
     return `<button class="dd ${st} ${i===di?"td":""}" data-i="${i}"><span>${d[0]+d.slice(1).toLowerCase()}</span><b>${st==="dn"?"✓":st==="rs"?"R":AB[s]||"•"}</b></button>`}).join("")}</div></div>
   <div class="stats">

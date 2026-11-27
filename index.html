@@ -360,7 +360,7 @@ function renderWk(m){
     const name=atWeek(`sub|${dn}|${e[0]}`,wkWeek)||e[1],sub=name!==e[1];
     let prev="";for(let w=wkWeek-1;w>=1&&!prev;w--){if(isDeload(w))continue;const p=logs[`${w}|${dn}|${e[0]}`];
       if(p&&(p.n||e[1])===name){const t=p.sets.filter(x=>num(x.r)>0).map(x=>`${x.w||0} kg × ${x.r}`).join(", ");if(t)prev=`Last time (${wkShort(w)}): ${t}`}}
-    h+=`<div class="ex"><div class="exh"><h3>${esc(name)}</h3><button class="chip swap" data-d="${dn}" data-s="${e[0]}">Swap</button></div><div class="meta">${n} sets · ${e[5]} reps · RIR ${dl?"4–5":"3"} · Tempo ${e[2]} · Rest ${e[3]}</div>
+    h+=`<div class="ex"><div class="exh"><h3>${esc(name)}</h3><button class="chip swap" data-d="${dn}" data-s="${e[0]}">Swap</button></div><div class="meta">${n} sets · ${e[5]} reps · RIR ${dl?"4–5":(e[7]||"3")} · Tempo ${e[2]} · Rest ${e[3]}</div>
     ${sub||!e[6]?"":`<div class="meta">${e[6]}</div>`}${prev?`<div class="hint">${prev}</div>`:""}`;
     for(let i=0;i<n;i++){const x=lg.sets[i]||{};
       h+=`<div class="set"><span>Set ${i+1}</span><input type="text" inputmode="decimal" placeholder="kg" data-k="${key}" data-i="${i}" data-f="w" data-nm="${esc(name)}" value="${x.w??""}"><b>×</b><input type="text" inputmode="numeric" placeholder="Reps" data-k="${key}" data-i="${i}" data-f="r" data-nm="${esc(name)}" value="${x.r??""}"></div>`}
@@ -760,7 +760,7 @@ function renderEditEx(m){
     h+=`<h2>${esc(ss.t)}</h2>`;
     if(sid.startsWith("C_"))h+=`<div style="margin-bottom:10px"><label>Workout name</label><input type="text" id="wn" value="${esc(ss.t)}"></div>`;
     h+=ss.x.map((s,i)=>{const e=s.split("|");return `<div class="ex"><div class="exh"><b>${esc(e[1])}</b><div style="display:flex;gap:6px"><button class="chip mv" data-i="${i}" data-d="-1">↑</button><button class="chip mv" data-i="${i}" data-d="1">↓</button><button class="chip rmx" data-i="${i}">Remove</button></div></div>
-    <div class="row" style="margin:8px 0 0"><div style="flex:1"><label>Sets</label><input type="text" inputmode="numeric" data-i="${i}" data-f="4" value="${esc(e[4])}"></div><div style="flex:1"><label>Reps</label><input type="text" data-i="${i}" data-f="5" value="${esc(e[5])}"></div></div></div>`}).join("");
+    <div class="row" style="margin:8px 0 0"><div style="flex:1"><label>Sets</label><input type="text" inputmode="numeric" data-i="${i}" data-f="4" value="${esc(e[4])}"></div><div style="flex:1"><label>Reps</label><input type="text" data-i="${i}" data-f="5" value="${esc(e[5])}"></div></div><div class="row" style="margin:8px 0 0"><div style="flex:1"><label>RIR</label><input type="text" inputmode="decimal" data-i="${i}" data-f="7" placeholder="3" value="${esc(e[7]||"3")}"></div><div style="flex:1"><label>Tempo</label><input type="text" inputmode="numeric" data-i="${i}" data-f="2" placeholder="3010" value="${esc(e[2]||"")}"></div></div></div>`}).join("");
     h+=`<button class="btn" id="addx">+ Add exercise</button>`;
   }
   m.innerHTML=h+`<button class="btn ${flow?"":"alt"}" id="bk2" style="margin-top:8px">${flow?"Finish":"Done"}</button>`;
@@ -769,7 +769,7 @@ function renderEditEx(m){
   else{
     m.querySelectorAll("input[data-f]").forEach(el=>el.onchange=()=>{
       const i=+el.dataset.i,f=+el.dataset.f,e=ss.x[i].split("|");
-      let v=el.value.trim().replace(/\|/g,"/");if(f===4)v=String(Math.max(1,parseInt(v)||1));if(f===5&&!v)v="8-12";
+      let v=el.value.trim().replace(/\|/g,"/");if(f===4)v=String(Math.max(1,parseInt(v)||1));if(f===5&&!v)v="8-12";if(f===7&&!v)v="3";if(f===2&&!v)v="3010";while(e.length<8)e.push("");
       e[f]=v;ss.x[i]=e.join("|");savePlan();render()});
     m.querySelectorAll(".mv").forEach(b=>b.onclick=()=>{const i=+b.dataset.i,j=i+ +b.dataset.d;if(j<0||j>=ss.x.length)return;[ss.x[i],ss.x[j]]=[ss.x[j],ss.x[i]];savePlan();render()});
     m.querySelectorAll(".rmx").forEach(b=>b.onclick=()=>{if(!b.dataset.a){b.dataset.a=1;b.textContent="Confirm";b.classList.add("on");return}ss.x.splice(+b.dataset.i,1);savePlan();render()});

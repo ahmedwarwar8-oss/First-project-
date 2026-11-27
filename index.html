@@ -100,6 +100,24 @@ nav button i{display:flex;justify-content:center;font-style:normal;margin-bottom
 .stat .l{font-size:12px;color:var(--muted)}
 .mv,.rmx{padding:4px 10px;font-size:12px}
 .dlb{border:2px solid var(--accent)}
+#cam{position:fixed;inset:0;z-index:40;background:#000;color:#fff;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+#cam[hidden]{display:none!important}
+.ctop{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;gap:6px}
+.cbtn{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:18px;padding:7px 12px;font:600 13px -apple-system,BlinkMacSystemFont,sans-serif}
+.cbtn.on{background:var(--accent);border-color:var(--accent)}
+.cbox{position:relative;width:100%;max-height:calc(100% - 190px);aspect-ratio:3/4;margin:0 auto;overflow:hidden;background:#111}
+.cbox video,.cbox img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cbox.mir video,.cbox.mir #cprev{transform:scaleX(-1)}
+#cgh{opacity:.35;pointer-events:none}
+.cguide{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cguide line{stroke:#7CFC9A;stroke-width:1.5;vector-effect:non-scaling-stroke}
+.glab{position:absolute;left:8px;color:#7CFC9A;font:600 11px -apple-system,sans-serif;text-shadow:0 1px 2px rgba(0,0,0,.7);pointer-events:none}
+.cbot[hidden],#cgh[hidden],#cprev[hidden],#cvid[hidden]{display:none}
+.ccount{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 96px -apple-system,sans-serif;text-shadow:0 2px 12px rgba(0,0,0,.6);pointer-events:none}
+.chint{font-size:12.5px;color:rgba(255,255,255,.75);text-align:center;padding:8px 20px 0}
+.cbot{display:flex;justify-content:center;align-items:center;gap:10px;padding:14px 16px;margin-top:auto}
+.shutter{width:72px;height:72px;border-radius:50%;border:5px solid #fff;background:var(--accent);box-shadow:0 0 0 3px rgba(0,0,0,.4) inset}
+.shutter:disabled{opacity:.5}
 .seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;margin:4px 0 12px}
 .seg button{flex:1;border:0;background:none;color:var(--muted);font-weight:600;font-size:14px;font-family:inherit;padding:9px 0;border-radius:9px}
 .seg button.on{background:var(--accent);color:#fff}
@@ -166,6 +184,15 @@ body{min-height:0;padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
 <input type="file" id="file" accept="image/*" multiple style="position:fixed;left:-9999px;opacity:0">
 <input type="file" id="rfile" style="position:fixed;left:-9999px;opacity:0">
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<div id="cam" hidden>
+  <div class="ctop"><button class="cbtn" id="cx">Close</button><div style="display:flex;gap:6px"><button class="cbtn" id="cghost">Ghost</button><button class="cbtn" id="ctimer">Timer</button><button class="cbtn" id="cflip">Flip</button></div></div>
+  <div class="cbox" id="cbox"><video id="cvid" playsinline muted autoplay></video><img id="cgh" alt=""><img id="cprev" alt="" hidden>
+    <svg class="cguide" id="cguide" viewBox="0 0 300 400" preserveAspectRatio="none"><line x1="0" y1="36" x2="300" y2="36"/><line x1="0" y1="378" x2="300" y2="378"/><line x1="150" y1="0" x2="150" y2="400" stroke-dasharray="6 8"/></svg><span class="glab" style="top:calc(9% - 18px)">Top of head</span><span class="glab" style="top:calc(94.5% + 3px)">Feet</span>
+    <div class="ccount" id="ccount"></div></div>
+  <div class="chint" id="chint">Line up your head and feet with the guides, and your body with the ghost photo.</div>
+  <div class="cbot" id="cbot"><button class="shutter" id="cshot" aria-label="Take photo"></button></div>
+  <div class="cbot" id="cdone" hidden><button class="btn alt" id="cre">Retake</button><button class="btn" id="csave">Save photo</button></div>
+</div>
 
 <script>
 // ---------- storage (IndexedDB, with in-memory fallback) ----------
@@ -218,7 +245,7 @@ function render(){
       :picking
       ?`<div class="ex pickbar"><div><b>Select 2 photos</b><div class="meta">${pick.length}/2 selected · older photo goes on the left</div></div><button class="chip" id="pcx">Cancel</button></div>
         <button class="btn" id="pgo" ${pick.length===2?"":"disabled"} style="margin-bottom:12px">Compare selected</button>`
-      :`<div class="row" style="margin:8px 0 12px"><label class="btn" for="file" style="display:block;text-align:center">+ Add photos</label>${photos.length>=2?`<button class="btn alt" id="psel">Select to compare</button>`:""}</div>`;
+      :`<div class="row" style="margin:8px 0 ${photos.length>=2?"8px":"12px"}"><button class="btn" id="pcam">Take photo</button><label class="btn alt" for="file" style="display:block;text-align:center">Add from library</label></div>${photos.length>=2?`<button class="btn alt" id="psel" style="margin-bottom:12px">Select to compare</button>`:""}`;
     m.innerHTML=warn+top+
     (photos.length?`<div class="grid">${photos.map(p=>{
       if(deleting){const on=del.includes(p.id);return `<div class="th ${on?"picked":"dim"}" data-id="${p.id}"><img src="${urlOf(p)}" alt="">${on?`<b class="pk">✓</b>`:`<b class="pk off"></b>`}<span>${nm(p)}</span></div>`}
@@ -242,6 +269,7 @@ function render(){
     if($("#dgo"))$("#dgo").onclick=async()=>{const b=$("#dgo");
       if(!b.dataset.a){b.dataset.a=1;b.textContent=`Tap again to delete ${del.length} photo${del.length===1?"":"s"}`;b.style.background="var(--accent)";b.style.color="#fff";return}
       b.disabled=true;b.textContent="Deleting…";for(const id of del)await pDel(id);del=null;load()};
+    if($("#pcam"))$("#pcam").onclick=openCam;
     if($("#psel"))$("#psel").onclick=()=>{pick=[];render()};
     if($("#pcx"))$("#pcx").onclick=()=>{pick=null;render()};
     if($("#pgo"))$("#pgo").onclick=()=>{const [x,y]=pick.map(id=>photos.find(p=>p.id===id)).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.id-b.id);
@@ -786,6 +814,45 @@ $("#t-stats").onclick=()=>{view=statsView;render()};
 $("#main").addEventListener("click",e=>{const b=e.target.closest("[data-sv]");if(b){view=b.dataset.sv;render()}});
 $("#t-home").onclick=()=>{view="home";render()};
 $("#gear").onclick=()=>{view="settings";render()};
+// ---------- in-app camera with ghost overlay + guides ----------
+let camStream=null,camShot=null,camTimerId=null;
+const camPrefs=()=>logs._cam||{k:"_cam",facing:"user",timer:0,ghost:0};
+function camUI(){const c=camPrefs(),g=photos.slice().reverse();
+  $("#cbox").classList.toggle("mir",c.facing==="user");
+  $("#ctimer").textContent=c.timer?`Timer ${c.timer}s`:"Timer off";$("#ctimer").classList.toggle("on",!!c.timer);
+  const gp=c.ghost>0?g[c.ghost-1]:null;
+  $("#cghost").textContent=gp?`Ghost: ${gp.label||fmt(gp.date)}`:"Ghost off";$("#cghost").classList.toggle("on",!!gp);
+  $("#cghost").disabled=!g.length;
+  const gi=$("#cgh");if(gp){gi.src=urlOf(gp);gi.hidden=false}else{gi.hidden=true;gi.removeAttribute("src")}}
+async function camStart(){
+  if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;
+  try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:camPrefs().facing,width:{ideal:1440},height:{ideal:1920}},audio:false});
+    $("#cvid").srcObject=camStream;await $("#cvid").play().catch(()=>{})}
+  catch(err){camClose();alert("The camera isn’t available. Allow camera access for this site in Settings → Safari → Camera, or use Add from library.")}}
+async function openCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){alert("This browser can’t open the camera inside the app. Use Add from library instead.");return}
+  const c=camPrefs();if(c.ghost===0&&photos.length&&!logs._cam)c.ghost=1;logs._cam=c;
+  camShot=null;$("#cprev").hidden=true;$("#cvid").hidden=false;$("#cbot").hidden=false;$("#cdone").hidden=true;$("#ccount").textContent="";$("#cshot").disabled=false;
+  $("#cam").hidden=false;camUI();await camStart()}
+function camClose(){clearInterval(camTimerId);if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;$("#cam").hidden=true;$("#cvid").srcObject=null}
+function camCapture(){const v=$("#cvid"),vw=v.videoWidth,vh=v.videoHeight;if(!vw)return;
+  let sw=vw,sh=vh,sx=0,sy=0;if(vw/vh>3/4){sw=vh*3/4;sx=(vw-sw)/2}else{sh=vw*4/3;sy=(vh-sh)/2}
+  const W=Math.min(1200,Math.round(sw)),H=Math.round(W*4/3),c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  if(camPrefs().facing==="user"){x.translate(W,0);x.scale(-1,1)}
+  x.drawImage(v,sx,sy,sw,sh,0,0,W,H);camShot=c.toDataURL("image/jpeg",.85);
+  const pv=$("#cprev");pv.src=camShot;pv.hidden=false;$("#cbox").classList.remove("mir");v.hidden=true;$("#cgh").hidden=true;
+  $("#cbot").hidden=true;$("#cdone").hidden=false}
+$("#cx").onclick=camClose;
+$("#cflip").onclick=async()=>{const c=camPrefs();c.facing=c.facing==="user"?"environment":"user";await wPut(c);camUI();await camStart()};
+$("#ctimer").onclick=async()=>{const c=camPrefs();c.timer=c.timer===0?3:c.timer===3?10:0;await wPut(c);camUI()};
+$("#cghost").onclick=async()=>{const c=camPrefs(),n=Math.min(photos.length,5);c.ghost=n?(c.ghost+1)%(n+1):0;await wPut(c);camUI()};
+$("#cshot").onclick=()=>{const t=camPrefs().timer;if(!t)return camCapture();
+  let n=t;$("#cshot").disabled=true;$("#ccount").textContent=n;
+  camTimerId=setInterval(()=>{n--;if(n>0){$("#ccount").textContent=n;return}clearInterval(camTimerId);$("#ccount").textContent="";$("#cshot").disabled=false;camCapture()},1000)};
+$("#cre").onclick=()=>{camShot=null;$("#cprev").hidden=true;$("#cvid").hidden=false;$("#cbot").hidden=false;$("#cdone").hidden=true;camUI()};
+$("#csave").onclick=async()=>{if(!camShot)return;const n=photos.length+1;
+  await pPut({id:Date.now(),date:localDay(),label:"Week "+n,data:camShot});camClose();view="gal";await load()};
+
 $("#file").onchange=async e=>{
   const files=[...e.target.files];e.target.value="";
   let n=photos.length;

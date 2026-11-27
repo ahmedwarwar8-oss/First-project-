@@ -123,6 +123,26 @@ nav button i{display:flex;justify-content:center;font-style:normal;margin-bottom
 .brand{display:flex;align-items:center;gap:10px}
 .logo{width:34px;height:34px;flex:0 0 auto;display:block}
 header{min-height:62px}
+/* compact Home: fits one screen */
+header{padding:10px 16px 4px;min-height:52px}
+.logo{width:30px;height:30px}
+body{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
+.hm .ex{padding:10px 12px;margin-bottom:8px}
+.hgr{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 8px}
+.hgr h2{margin:0;font-size:21px}
+.htd{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.htd h3{font-size:18px;margin:1px 0}
+.htd .btn{width:auto;padding:10px 20px;flex:0 0 auto}
+.hm .meta{margin:0}
+.hwt .wbar{height:8px;margin:8px 0}
+.hm .wbtns .chip{padding:7px 0;font-size:13.5px}
+.hm .days{margin-top:6px}
+.hm .dd b{width:32px;height:32px;line-height:28px;margin-top:3px}
+.hm .stats{grid-template-columns:1fr 1fr 1fr;gap:8px}
+.hm .stat{padding:9px 10px}
+.hm .stat .v{font-size:20px;margin:1px 0}
+.hm .stat .v small{font-size:12px;font-weight:600}
+.hm .stat .l{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wbar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:10px 0}
 .wbar div{height:100%;background:#2b8fd6;border-radius:6px;transition:width .3s}
 .wbtns{display:flex;gap:8px}
@@ -563,19 +583,21 @@ function renderHome(m){
   const nsets=ss.x.reduce((a,s)=>a+ +s.split("|")[4],0),started=sessDone(sid);
   const hr=new Date().getHours(),gr=hr<12?"Good morning":hr<18?"Good afternoon":"Good evening";
   const dv=last&&prev?last.v-prev.v:0;
-  m.innerHTML=`<div class="sub">${new Date().toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"})}</div>
-  <h2 style="margin:2px 0 12px;font-size:24px">${gr}</h2>
-  <div class="ex"><div class="meta">TODAY</div><h3 style="font-size:20px;margin:2px 0">${ss.t}</h3>
-  ${rest?`<div class="meta">${sid==="REST"?"Recover, eat well and sleep.":"No exercises yet. Add some in Settings → Edit exercises."}</div>`:`<div class="meta">${ss.x.length} exercises · ${nsets} sets${started?" · in progress":""}</div><button class="btn" id="go" style="margin-top:10px">${started?"Continue workout":"Start workout"}</button>`}</div>
+  const dateStr=new Date().toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"});
+  m.innerHTML=`<div class="hm">
+  <div class="hgr"><h2>${gr}</h2><span class="sub">${dateStr}</span></div>
+  <div class="ex htd"><div><div class="meta">TODAY</div><h3>${ss.t}</h3>
+  <div class="meta">${rest?(sid==="REST"?"Recover, eat well and sleep.":"No exercises yet. Add some in Settings."):`${ss.x.length} exercises · ${nsets} sets${started?" · in progress":""}`}</div></div>
+  ${rest?"":`<button class="btn" id="go">${started?"Continue":"Start"}</button>`}</div>
 ${waterCard()}
-  <div class="ex"><div class="exh"><div><h3>${wkLabel(wkWeek)}</h3><div class="meta" style="margin:0">${mesoLabel(wkWeek)}</div></div><span class="meta">${done}/${planned.length} sessions done</span></div>
+  <div class="ex"><div class="exh"><b>${wkLabel(wkWeek)} <span class="meta" style="font-weight:400">· ${mesoLabel(wkWeek)}</span></b><span class="meta">${done}/${planned.length} done</span></div>
   <div class="days">${DAYS.map((d,i)=>{const s=sc[d]||"REST",st=s==="REST"?"rs":sessDone(s)?"dn":"pl";
     return `<button class="dd ${st} ${i===di?"td":""}" data-i="${i}"><span>${d[0]+d.slice(1).toLowerCase()}</span><b>${st==="dn"?"✓":st==="rs"?"R":AB[s]||"•"}</b></button>`}).join("")}</div></div>
   <div class="stats">
-   <div class="stat" data-go="bw"><div class="l">Body weight</div><div class="v">${last?f(last.v)+" "+unit:"—"}</div><div class="l">${last&&prev?(dv>0?"▲ ":dv<0?"▼ ":"")+f(Math.abs(dv))+" since last":last?fmt(last.d):"Tap to add"}</div></div>
-   <div class="stat" data-go="wk"><div class="l">This week</div><div class="v">${done}/${planned.length}</div><div class="l">workouts done</div></div>
-   <div class="stat" data-go="gal"><div class="l">Photos</div><div class="v">${photos.length}</div><div class="l">${photos.length?"Latest "+fmt(photos[photos.length-1].date):"Tap to add"}</div></div>
-   <div class="stat" data-go="prog"><div class="l">Progress</div><div class="v">${Object.keys(progData()).length}</div><div class="l">lifts tracked</div></div></div>`;
+   <div class="stat" data-go="bw"><div class="l">Weight</div><div class="v">${last?f(last.v):"—"}<small>${last?" kg":""}</small></div><div class="l">${last&&prev?(dv>0?"▲ ":dv<0?"▼ ":"")+f(Math.abs(dv))+" kg":last?fmt(last.d):"Tap to add"}</div></div>
+   <div class="stat" data-go="gal"><div class="l">Photos</div><div class="v">${photos.length}</div><div class="l">${photos.length?fmt(photos[photos.length-1].date):"Tap to add"}</div></div>
+   <div class="stat" data-go="prog"><div class="l">Lifts</div><div class="v">${Object.keys(progData()).length}</div><div class="l">tracked</div></div></div>
+  </div>`;
   wireWater(m);
   const go=()=>{wkDay=di;view="wk";render()};
   if($("#go"))$("#go").onclick=go;
@@ -609,10 +631,9 @@ const waterGoal=()=>logs._water&&logs._water.goal||3000;
 const litres=ml=>(Math.round(ml/50)/20).toLocaleString(undefined,{maximumFractionDigits:2})+" L";
 function waterCard(){
   const k="water|"+localDay(),ml=logs[k]?logs[k].ml:0,g=waterGoal(),pc=Math.min(100,Math.round(ml/g*100));
-  return `<div class="ex"><div class="exh"><h3>Water</h3><button class="chip swap" id="wgoal">Set goal</button></div>
-  <div style="font-size:22px;font-weight:700;margin-top:4px">${litres(ml)} <span class="meta" style="font-size:14px;font-weight:400">of ${litres(g)} · ${pc}%</span></div>
+  return `<div class="ex hwt"><div class="exh"><b>Water</b><span><b>${litres(ml)}</b> <span class="meta">of ${litres(g)} · ${pc}%</span></span></div>
   <div class="wbar"><div style="width:${pc}%"></div></div>
-  <div class="wbtns"><button class="chip" data-ml="600">+600 ml</button><button class="chip" data-ml="1000">+1 L</button><button class="chip" id="wundo" ${ml?"":"disabled"}>Undo</button></div></div>`}
+  <div class="wbtns"><button class="chip" data-ml="600">+600 ml</button><button class="chip" data-ml="1000">+1 L</button><button class="chip" id="wundo" ${ml?"":"disabled"}>Undo</button><button class="chip" id="wgoal">Goal</button></div></div>`}
 async function setWaterGoal(v){const g=Math.round(Math.min(10,Math.max(0.25,num(v)||3))*1000);await wPut({k:"_water",goal:g});return g}
 function openWaterGoal(){
   const close=()=>$("#modal").classList.remove("on");

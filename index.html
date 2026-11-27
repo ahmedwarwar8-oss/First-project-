@@ -115,6 +115,7 @@ header{min-height:62px}
 <main id="main"></main>
 <nav><button id="t-home"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg></i>Home</button><button id="t-wk"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg></i>Workouts</button><button id="t-prog"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg></i>Progress</button><button id="t-bw"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8.5 9a5 5 0 0 1 7 0"/><path d="m12 12 1.5-2.5"/></svg></i>Weight</button><button id="t-gal"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v13H4z"/><circle cx="12" cy="13" r="3.5"/></svg></i>Photos</button></nav>
 <input type="file" id="file" accept="image/*" multiple style="position:fixed;left:-9999px;opacity:0">
+<input type="file" id="rfile" style="position:fixed;left:-9999px;opacity:0">
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 
 <script>
@@ -488,18 +489,58 @@ function wireWater(m){
   const g=m.querySelector("#wgoal");if(g)g.onclick=openWaterGoal;
 }
 
+// ---------- backup & restore ----------
+const lastBackup=()=>logs._backup?"Last backup: "+new Date(logs._backup.t).toLocaleString(undefined,{day:"numeric",month:"short",year:"numeric",hour:"numeric",minute:"2-digit"}):"No backup yet.";
+async function backup(){
+  const msg=$("#bkmsg");msg.textContent="Preparing backup…";
+  try{
+    await wPut({k:"_backup",t:Date.now()});
+    const data={app:"physiq",version:1,created:new Date().toISOString(),photos:await pAll(),logs:await wAll()};
+    const name="physiq-backup-"+localDay()+".json",file=new File([JSON.stringify(data)],name,{type:"application/json"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:"Physiq backup"})}catch(e){if(e.name==="AbortError"){msg.textContent="Backup cancelled.";return}throw e}
+    }else{const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}
+    msg.textContent=lastBackup()+" · "+data.photos.length+" photos saved. Choose “Save to Files” if asked.";
+  }catch(e){msg.textContent="Backup failed. Please try again."}
+}
+function clearStore(name){return new Promise(res=>{if(!db||!db.objectStoreNames.contains(name)){if(name==="p")mem=[];else lmem={};return res()}const q=db.transaction(name,"readwrite").objectStore(name).clear();q.onsuccess=q.onerror=()=>res()})}
+$("#rfile").onchange=async e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;
+  const msg=$("#bkmsg");let data;
+  try{data=JSON.parse(await f.text())}catch(err){data=null}
+  if(!data||data.app!=="physiq"||!Array.isArray(data.photos)||!Array.isArray(data.logs)){if(msg)msg.textContent="That file isn’t a Physiq backup.";return}
+  const when=data.created?new Date(data.created).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}):"unknown date";
+  $("#sheet").innerHTML=`<div class="shr"><button class="chip" id="back">‹ Back</button><h2>Restore backup?</h2></div>
+  <div class="meta">Backup from ${when}: ${data.photos.length} photos and ${data.logs.length} saved entries.</div>
+  <p style="color:var(--accent);font-weight:600">This replaces everything currently in the app on this phone.</p>
+  <div class="row"><button class="btn" id="rgo">Restore</button></div>`;
+  $("#modal").classList.add("on");
+  const close=()=>$("#modal").classList.remove("on");
+  $("#back").onclick=close;
+  $("#rgo").onclick=async()=>{$("#rgo").disabled=true;$("#rgo").textContent="Restoring…";
+    await clearStore("p");await clearStore("w");
+    for(const p of data.photos)if(p&&p.id!=null)await pPut(p);
+    for(const o of data.logs)if(o&&o.k!=null)await wPut(o);
+    close();location.reload()};
+};
+
 // ---------- settings ----------
 function renderSettings(m){
   m.innerHTML=`<h2 style="margin:6px 0 10px;font-size:22px">Settings</h2>
   <div class="ex"><h3>Water</h3><div style="margin-top:8px"><label>Daily goal (litres)</label><input type="text" inputmode="decimal" id="wg" value="${waterGoal()/1000}" placeholder="e.g. 3.5"></div></div>
   <button class="btn alt" id="cw">Set up your week</button>
   <button class="btn alt" id="ee" style="margin-top:8px">Edit exercises</button>
+  <div class="ex" style="margin-top:10px"><h3>Backup &amp; restore</h3>
+  <div class="meta" style="margin:4px 0 10px">Save all your photos, workouts, weights and water to a file. Keep it in Files or iCloud Drive, and use Restore to load it back on this or another phone.</div>
+  <div class="row" style="margin:0"><button class="btn" id="bkup">Back up</button><label class="btn alt" for="rfile" style="text-align:center">Restore</label></div>
+  <div class="meta" id="bkmsg" style="margin-top:8px">${lastBackup()}</div></div>
   <button class="btn" id="bk" style="margin-top:8px">Done</button>
   <p class="note">Everything stays on this device only. Nothing is ever uploaded.<br>All weights are in kilograms (kg).</p>`;
   $("#wg").onchange=async e=>{e.target.value=(await setWaterGoal(e.target.value))/1000};
   $("#cw").onclick=()=>{draft=null;view="setup";render()};
   $("#ee").onclick=()=>{view="editex";render()};
   $("#bk").onclick=()=>{view="home";render()};
+  $("#bkup").onclick=backup;
 }
 
 // ---------- plan editing (Settings only) ----------

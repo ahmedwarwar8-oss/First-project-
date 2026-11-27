@@ -123,26 +123,32 @@ nav button i{display:flex;justify-content:center;font-style:normal;margin-bottom
 .brand{display:flex;align-items:center;gap:10px}
 .logo{width:34px;height:34px;flex:0 0 auto;display:block}
 header{min-height:62px}
-/* compact Home: fits one screen */
+/* Home: fills one screen, scaling with its height (compact on small phones, roomier on tall ones) */
+html{background:var(--bg)}
 header{padding:10px 16px 4px;min-height:52px}
-.logo{width:30px;height:30px}
-body{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
-.hm .ex{padding:10px 12px;margin-bottom:8px}
-.hgr{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 8px}
-.hgr h2{margin:0;font-size:21px}
+.logo{width:32px;height:32px}
+body{min-height:0;padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
+.hm .ex{padding:clamp(8px,calc(3.6vh - 11px),20px) 14px;margin-bottom:clamp(7px,calc(2.2vh - 5px),16px)}
+.hgr{display:flex;align-items:baseline;justify-content:space-between;margin:clamp(0px,calc(2vh - 11px),10px) 0 clamp(6px,calc(2.6vh - 8px),18px)}
+.hgr h2{margin:0;font-size:clamp(20px,calc(4.4vh - 5px),30px)}
+.hgr .sub{font-size:clamp(13px,1.9vh,15px)}
 .htd{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.htd h3{font-size:18px;margin:1px 0}
-.htd .btn{width:auto;padding:10px 20px;flex:0 0 auto}
-.hm .meta{margin:0}
-.hwt .wbar{height:8px;margin:8px 0}
-.hm .wbtns .chip{padding:7px 0;font-size:13.5px}
-.hm .days{margin-top:6px}
-.hm .dd b{width:32px;height:32px;line-height:28px;margin-top:3px}
-.hm .stats{grid-template-columns:1fr 1fr 1fr;gap:8px}
-.hm .stat{padding:9px 10px}
-.hm .stat .v{font-size:20px;margin:1px 0}
+.htd h3{font-size:clamp(17px,calc(3.4vh - 2px),24px);margin:2px 0}
+.htd .btn{width:auto;padding:clamp(9px,calc(2.4vh - 4px),15px) 22px;flex:0 0 auto}
+.hm .meta{margin:0;font-size:clamp(12px,1.75vh,14px)}
+.hwt .exh b:first-child{font-size:clamp(16px,2.3vh,19px)}
+.hwt .exh span>b{font-size:clamp(17px,calc(4vh - 5px),26px)}
+.hwt .wbar{height:clamp(7px,calc(1.6vh - 2px),12px);margin:clamp(7px,calc(2.4vh - 6px),15px) 0}
+.hm .wbtns .chip{padding:clamp(6px,calc(2.3vh - 7px),13px) 0;font-size:clamp(13px,1.95vh,16px)}
+.hm .exh>b{font-size:clamp(16px,2.3vh,19px)}
+.hm .days{margin-top:clamp(5px,calc(2vh - 6px),13px)}
+.hm .dd{font-size:clamp(11px,1.6vh,13px)}
+.hm .dd b{width:clamp(30px,calc(6.4vh - 7px),46px);height:clamp(30px,calc(6.4vh - 7px),46px);line-height:normal;display:flex;align-items:center;justify-content:center;margin-top:4px}
+.hm .stats{grid-template-columns:1fr 1fr 1fr;gap:clamp(8px,1.4vh,12px)}
+.hm .stat{padding:clamp(8px,calc(3.2vh - 10px),18px) 12px}
+.hm .stat .v{font-size:clamp(19px,calc(4.4vh - 6px),30px);margin:2px 0}
 .hm .stat .v small{font-size:12px;font-weight:600}
-.hm .stat .l{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm .stat .l{font-size:clamp(11.5px,1.7vh,13.5px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wbar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:10px 0}
 .wbar div{height:100%;background:#2b8fd6;border-radius:6px;transition:width .3s}
 .wbtns{display:flex;gap:8px}

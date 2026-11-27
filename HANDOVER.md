@@ -52,7 +52,7 @@ The whole app is one HTML file with plain JavaScript and CSS: no framework, no b
 | File | Purpose |
 | --- | --- |
 | `index.html` | The entire app: layout, styles and code |
-| `sw.js` | Service worker. Network first, falls back to cache when offline. Holds `VERSION` (now `progress-v30`) |
+| `sw.js` | Service worker. Network first, falls back to cache when offline. Holds `VERSION` (now `progress-v31`) |
 | `manifest.webmanifest` | App name (Physiq), colours (accent `#e8412c`), icons, standalone display |
 | `icons/` | Home-screen icons: 180 px Apple icon, 192 and 512 px, and a 512 px maskable icon |
 | `README.md` | Setup, hosting and install instructions |

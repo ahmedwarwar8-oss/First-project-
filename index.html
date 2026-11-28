@@ -158,6 +158,12 @@ body{min-height:0;padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
 .hm .days{margin-top:clamp(5px,calc(2vh - 6px),13px)}
 .hm .dd{font-size:clamp(11px,1.6vh,13px)}
 .hm .dd b{width:clamp(30px,calc(6.4vh - 7px),46px);height:clamp(30px,calc(6.4vh - 7px),46px);line-height:normal;display:flex;align-items:center;justify-content:center;margin-top:4px}
+.hhr{cursor:pointer}
+.hh{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:clamp(4px,calc(1.6vh - 4px),10px)}
+.hh .v{font-size:clamp(19px,calc(4.2vh - 6px),28px);font-weight:700;margin:2px 0}
+.hh .v small{font-size:12px;font-weight:600}
+.hh .l{font-size:clamp(11.5px,1.7vh,13.5px);color:var(--muted)}
+.hh>div+div{border-left:1px solid var(--line);padding-left:12px}
 .hm .stats{grid-template-columns:1fr 1fr 1fr;gap:clamp(8px,1.4vh,12px)}
 .hm .stat{padding:clamp(8px,calc(3.2vh - 10px),18px) 12px}
 .hm .stat .v{font-size:clamp(19px,calc(4.4vh - 6px),30px);margin:2px 0}
@@ -618,6 +624,7 @@ function renderHome(m){
   <div class="ex"><div class="exh"><b>${wkLabel(wkWeek)} <span class="meta" style="font-weight:400">· ${mesoLabel(wkWeek)}</span></b><span class="meta">${done}/${planned.length} done</span></div>
   <div class="days">${DAYS.map((d,i)=>{const s=sc[d]||"REST",st=s==="REST"?"rs":sessDone(s)?"dn":"pl";
     return `<button class="dd ${st} ${i===di?"td":""}" data-i="${i}"><span>${d[0]+d.slice(1).toLowerCase()}</span><b>${st==="dn"?"✓":st==="rs"?"R":AB[s]||"•"}</b></button>`}).join("")}</div></div>
+  ${heartCard()}
   <div class="stats">
    <div class="stat" data-go="bw"><div class="l">Weight</div><div class="v">${last?f(last.v):"—"}<small>${last?" kg":""}</small></div><div class="l">${last&&prev?(dv>0?"▲ ":dv<0?"▼ ":"")+f(Math.abs(dv))+" kg":last?fmt(last.d):"Tap to add"}</div></div>
    <div class="stat" data-go="gal"><div class="l">Photos</div><div class="v">${photos.length}</div><div class="l">${photos.length?fmt(photos[photos.length-1].date):"Tap to add"}</div></div>
@@ -626,8 +633,17 @@ function renderHome(m){
   const go=()=>{wkDay=di;view="wk";render()};
   if($("#go"))$("#go").onclick=go;
   m.querySelectorAll(".dd").forEach(b=>b.onclick=()=>{wkDay=+b.dataset.i;view="wk";render()});
-  m.querySelectorAll(".stat").forEach(b=>b.onclick=()=>{view=b.dataset.go;render()});
+  m.querySelectorAll(".stat,.hhr").forEach(b=>b.onclick=()=>{view=b.dataset.go;render()});
 }
+function heartCard(){
+  const es=Object.keys(logs).filter(k=>k.startsWith("bp|")).map(k=>logs[k]).sort((a,b)=>a.d<b.d?-1:1);
+  const bp=es.filter(e=>e.sys&&e.dia),hr=es.filter(e=>e.hr),b1=bp.at(-1),b0=bp.at(-2),h1=hr.at(-1),h0=hr.at(-2);
+  const ch=(a,b)=>{const d=a-b;return d>0?"▲ "+d:d<0?"▼ "+(-d):"no change"};
+  if(!es.length)return `<div class="ex hhr" data-go="bp"><div class="exh"><b>Heart</b><span class="meta">Tap to add</span></div><div class="meta" style="margin-top:4px">Log your blood pressure and resting heart rate in Stats.</div></div>`;
+  const last=es.at(-1).d;
+  return `<div class="ex hhr" data-go="bp"><div class="exh"><b>Heart</b><span class="meta">Latest ${fmt(last)}</span></div>
+  <div class="hh"><div><div class="l">Blood pressure</div><div class="v">${b1?`${b1.sys}/${b1.dia}<small> mmHg</small>`:"—"}</div><div class="l">${b1&&b0?`${ch(b1.sys,b0.sys)} / ${ch(b1.dia,b0.dia).replace(/^no change$/,"–")}`:b1?fmt(b1.d):"Not logged"}</div></div>
+  <div><div class="l">Resting HR</div><div class="v">${h1?`${h1.hr}<small> bpm</small>`:"—"}</div><div class="l">${h1&&h0?ch(h1.hr,h0.hr):h1?fmt(h1.d):"Not logged"}</div></div></div></div>`}
 function renderSetup(m){
   if(!draft)draft={...sched};
   const opts=["REST",...BASE,"CUSTOM"];

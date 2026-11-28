@@ -142,6 +142,45 @@ nav button i{display:flex;justify-content:center;font-style:normal;margin-bottom
 .brand{display:flex;align-items:center;gap:10px}
 .logo{width:34px;height:34px;flex:0 0 auto;display:block}
 header{min-height:62px}
+/* ---------- polish ---------- */
+:root{--accent-soft:rgba(232,65,44,.1);--card-edge:rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--accent-soft:rgba(232,65,44,.16);--card-edge:rgba(255,255,255,.05)}}
+:root[data-theme="dark"]{--accent-soft:rgba(232,65,44,.16);--card-edge:rgba(255,255,255,.05)}
+body{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+.ex,.stat,.sg{border-radius:16px;box-shadow:0 0 0 1px var(--card-edge)}
+.ex{padding:14px}
+.ex h3{font-size:17px;letter-spacing:-.01em}
+.meta{line-height:1.45}
+.ptitle{font-size:26px;letter-spacing:-.02em;margin:4px 0 6px}
+.shead h2{font-size:26px;letter-spacing:-.02em}
+.dtitle{font-size:22px;letter-spacing:-.01em;margin:16px 0 10px}
+h1{letter-spacing:-.02em}
+.btn{border-radius:13px;padding:13px 16px;transition:transform .1s,opacity .1s}
+.btn:active,.chip:active{transform:scale(.97);opacity:.85}
+.chip{transition:transform .1s}
+.hint{display:inline-block;color:var(--text);background:var(--accent-soft);border-radius:8px;padding:5px 9px;margin:6px 0 4px;font-size:12px;font-weight:500}
+.set{gap:6px;margin:5px 0;padding:3px 4px;border-radius:12px}
+.set.done{background:var(--accent-soft)}
+.set .sn{width:26px;height:26px;flex:0 0 26px;border-radius:50%;background:var(--bg);color:var(--muted);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-right:4px}
+.set.done .sn{background:var(--accent);color:#fff}
+.set b{color:var(--muted);font-weight:500}
+.set input{height:42px;padding:8px}
+.shd2{margin:10px 0 0;padding:0 4px}
+.shd2 span{width:26px;flex:0 0 26px;margin-right:4px}
+.shd2 i{flex:1;text-align:center;font-style:normal;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.shd2 i.rir{flex:0 0 64px;margin-left:2px}
+.shd2 b{visibility:hidden}
+.th{border-radius:12px}
+.th span{padding:22px 8px 7px;display:flex;flex-direction:column;gap:1px;line-height:1.2;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+.th span b{font-size:12px;font-weight:700}
+.th span em{font-style:normal;font-size:10.5px;opacity:.85}
+nav{background:color-mix(in srgb,var(--card) 82%,transparent);-webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px)}
+nav button{font-size:10.5px;letter-spacing:.01em}
+nav button i svg{transition:transform .15s}
+nav button.on i svg{transform:translateY(-1px)}
+.sgh,.gh{letter-spacing:.05em}
+.prow{font-variant-numeric:tabular-nums}
+select{-webkit-appearance:none;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
 /* Home: fills one screen, scaling with its height (compact on small phones, roomier on tall ones) */
 html{background:var(--bg)}
 header{padding:10px 16px 4px;min-height:52px}
@@ -209,10 +248,11 @@ function pDel(id){return new Promise(res=>{if(!db){mem=mem.filter(x=>x.id!==id);
 // ---------- helpers ----------
 const $=s=>document.querySelector(s);
 let view="home", selA=null, selB=null, pos=50, pick=null, del=null, lpAt=0;
-const fmt=d=>{try{return new Date(d+"T12:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short",year:"2-digit"})}catch(e){return d}};
+const fmt=d=>{try{const x=new Date(d+"T12:00:00"),o={day:"numeric",month:"short"};if(x.getFullYear()!==new Date().getFullYear())o.year="numeric";return x.toLocaleDateString(undefined,o)}catch(e){return d}};
 const today=()=>new Date().toISOString().slice(0,10);
 const urlOf=p=>p.data;
 const nm=p=>(p.label?p.label+" · ":"")+fmt(p.date);
+const tlab=p=>`${p.label?`<b>${esc(p.label)}</b>`:""}<em>${fmt(p.date)}</em>`;
 
 function shrink(file){return new Promise((res,rej)=>{
   const im=new Image(),fr=new FileReader();fr.onerror=()=>rej();fr.onload=()=>{im.src=fr.result};fr.readAsDataURL(file);
@@ -247,9 +287,9 @@ function render(){
       :`<div class="row" style="margin:8px 0 ${photos.length>=2?"8px":"12px"}"><button class="btn" id="pcam">Take photo</button><label class="btn alt" for="file" style="display:block;text-align:center">Add from library</label></div>${photos.length>=2?`<button class="btn alt" id="psel" style="margin-bottom:12px">Select to compare</button>`:""}`;
     m.innerHTML=warn+top+
     (photos.length?`<div class="grid">${photos.map(p=>{
-      if(deleting){const on=del.includes(p.id);return `<div class="th ${on?"picked":"dim"}" data-id="${p.id}"><img src="${urlOf(p)}" alt="">${on?`<b class="pk">✓</b>`:`<b class="pk off"></b>`}<span>${nm(p)}</span></div>`}
+      if(deleting){const on=del.includes(p.id);return `<div class="th ${on?"picked":"dim"}" data-id="${p.id}"><img src="${urlOf(p)}" alt="">${on?`<b class="pk">✓</b>`:`<b class="pk off"></b>`}<span>${tlab(p)}</span></div>`}
       const i=picking?pick.indexOf(p.id):-1;
-      return `<div class="th ${i>=0?"picked":""} ${picking&&i<0?"dim":""}" data-id="${p.id}"><img src="${urlOf(p)}" alt="">${i>=0?`<b class="pk">${i+1}</b>`:""}<span>${nm(p)}</span></div>`}).join("")}</div>`
+      return `<div class="th ${i>=0?"picked":""} ${picking&&i<0?"dim":""}" data-id="${p.id}"><img src="${urlOf(p)}" alt="">${i>=0?`<b class="pk">${i+1}</b>`:""}<span>${tlab(p)}</span></div>`}).join("")}</div>`
     :`<div class="empty">No photos yet.<br>Add your first weekly photo to get started.</div>`)+
     (picking||deleting?"":`<p class="note">Tip: hold down on a photo to select several and delete them at once. Keep the same pose, lighting and distance each week. Photos are saved in this browser’s storage on your iPhone. Clearing Safari website data or deleting the Home Screen app can erase them.</p>`);
     m.querySelectorAll(".th").forEach(e=>{const id=+e.dataset.id;let t=null,sx=0,sy=0,held=false;
@@ -378,7 +418,7 @@ function renderWk(m){
   const pa=planAt(wkWeek),dn=pa.sess(wkDay),d=pa.get(dn),sid0=dn;
   let h=`<div class="wkbar"><button class="sm" id="wm">‹</button><div><b style="font-size:18px">${wkLabel(wkWeek)}</b><div class="sub">${mesoLabel(wkWeek)}</div></div><button class="sm" id="wp">›</button></div>
   <div class="chips">${DAYS.map((x,i)=>`<button class="chip ${i===wkDay?"on":""}" data-i="${i}">${x[0]+x.slice(1).toLowerCase()}</button>`).join("")}</div>
-  <h2>${d.t}</h2>`;
+  <h2 class="dtitle">${d.t}</h2>`;
   const dl=isDeload(wkWeek);
   if(dl)h+=`<div class="ex dlb"><b>Deload week</b><div class="meta">Recover before Mesocycle ${mesoOf(wkWeek)+1}. Do half the usual sets at about 50–60% of your normal weights, and stop well short of failure (RIR 4–5).</div></div>`;
   if(!d.x.length)h+=sid0==="REST"?`<div class="empty">Rest and recover</div>`:`<div class="empty">No exercises yet.<br>Add some in Settings → Edit exercises.</div>`;
@@ -389,8 +429,9 @@ function renderWk(m){
       if(p&&(p.n||e[1])===name){const t=p.sets.filter(x=>num(x.r)>0).map(x=>`${x.w||0} kg × ${x.r}${x.i!=null&&x.i!==""?` (RIR ${x.i})`:""}`).join(", ");if(t)prev=`Last time (${wkShort(w)}): ${t}`}}
     h+=`<div class="ex"><div class="exh"><h3>${esc(name)}</h3><button class="chip swap" data-d="${dn}" data-s="${e[0]}">Swap</button></div><div class="meta">${n} sets · ${e[5]} reps · RIR ${dl?"4–5":(e[7]||"3")} · Tempo ${e[2]} · Rest ${e[3]}</div>
     ${sub||!e[6]?"":`<div class="meta">${e[6]}</div>`}${prev?`<div class="hint">${prev}</div>`:""}`;
+    h+=`<div class="set shd2"><span></span><i>kg</i><b></b><i>Reps</i><i class="rir">RIR</i></div>`;
     for(let i=0;i<n;i++){const x=lg.sets[i]||{};
-      h+=`<div class="set"><span>Set ${i+1}</span><input type="text" inputmode="decimal" placeholder="kg" data-k="${key}" data-i="${i}" data-f="w" data-nm="${esc(name)}" value="${x.w??""}"><b>×</b><input type="text" inputmode="numeric" placeholder="Reps" data-k="${key}" data-i="${i}" data-f="r" data-nm="${esc(name)}" value="${x.r??""}"><input class="rir" type="text" inputmode="decimal" placeholder="RIR" aria-label="Reps in reserve" data-k="${key}" data-i="${i}" data-f="i" data-nm="${esc(name)}" value="${x.i??""}"></div>`}
+      h+=`<div class="set ${num(x.r)>0?"done":""}"><span class="sn">${i+1}</span><input type="text" inputmode="decimal" placeholder="kg" data-k="${key}" data-i="${i}" data-f="w" data-nm="${esc(name)}" value="${x.w??""}"><b>×</b><input type="text" inputmode="numeric" placeholder="Reps" data-k="${key}" data-i="${i}" data-f="r" data-nm="${esc(name)}" value="${x.r??""}"><input class="rir" type="text" inputmode="decimal" placeholder="RIR" aria-label="Reps in reserve" data-k="${key}" data-i="${i}" data-f="i" data-nm="${esc(name)}" value="${x.i??""}"></div>`}
     h+=(dl?"":`<button class="chip addset" data-sk="${sk}" data-n="${n}">+ Set</button>${n>1?`<button class="chip rmset" data-k="${key}" data-sk="${sk}" data-n="${n}">− Set</button>`:""}`)+`</div>`});
   if(d.x.length)h+=`<div class="ex"><b id="tot">${totals()}</b></div>`;
   m.innerHTML=h;
@@ -650,7 +691,7 @@ function renderSetup(m){
   const opts=["REST",...BASE,"CUSTOM"];
   const intro=flow==="onb"?`<div class="meta">STEP 1 OF 2</div><h2 style="margin:2px 0 4px;font-size:22px">Choose your training days</h2>`
     :flow==="meso"?`<div class="meta">MESOCYCLE ${mesoOf(wkWeek)} · STEP 1 OF 2</div><h2 style="margin:2px 0 4px;font-size:22px">Set up your new plan</h2>`
-    :`<h2 style="margin:6px 0 4px;font-size:22px">Set up your week</h2>`;
+    :`<h2 class="ptitle">Set up your week</h2>`;
   m.innerHTML=`${intro}
   <div class="sub" style="margin-bottom:12px">Choose what you train each day and which days are rest. Each session can be used once a week. Picking one that’s already used swaps the two days.</div>
   <div class="ex">${DAYS.map((d,i)=>`<div class="row" style="align-items:center"><div style="flex:1;font-weight:600">${FULL[i]}</div>
@@ -724,7 +765,7 @@ function renderSettings(m){
   <div class="sgf" id="bkmsg">${lastBackup()}</div>
   <div class="sgh">About</div>
   <div class="sg">
-    <div class="srow"><span class="sl">${ic("#5856d6",'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>')}Units</span><span class="sv" style="padding-right:4px">Metric (kg, L)</span></div>
+    <div class="srow"><span class="sl">${ic("#5856d6",'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>')}Units</span><span class="sv" style="padding-right:4px">Metric (kg)</span></div>
     <div class="srow"><span class="sl">${ic("#636366",'<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>')}Privacy</span><span class="sv" style="padding-right:4px">On this device only</span></div>
   </div>
   <div class="sgf">Everything stays on this device. Nothing is ever uploaded. Back up regularly so you don’t lose your data.</div>
@@ -760,7 +801,7 @@ const RESTS=["30 sec","45 sec","1 min","75 sec","90 sec","2 min","2.5 min","3 mi
 const restOpts=cur=>{cur=cur||"90 sec";const l=RESTS.includes(cur)?RESTS:[cur,...RESTS];return l.map(r=>`<option ${r===cur?"selected":""}>${esc(r)}</option>`).join("")};
 function renderEditEx(m){
   const sid=sess(exDay),ss=PLAN[sid],rest=sid==="REST";
-  let h=`${flow?`<div class="meta">${flow==="meso"?`MESOCYCLE ${mesoOf(wkWeek)} · `:""}STEP 2 OF 2</div><h2 style="margin:2px 0 4px;font-size:22px">Choose your exercises</h2>`:`<h2 style="margin:6px 0 4px;font-size:22px">Edit exercises</h2>`}<div class="sub" style="margin-bottom:8px">Add, remove or reorder the exercises for each day.${flow?" Tap each day along the top.":""}</div>
+  let h=`${flow?`<div class="meta">${flow==="meso"?`MESOCYCLE ${mesoOf(wkWeek)} · `:""}STEP 2 OF 2</div><h2 style="margin:2px 0 4px;font-size:22px">Choose your exercises</h2>`:`<h2 class="ptitle">Edit exercises</h2>`}<div class="sub" style="margin-bottom:8px">Add, remove or reorder the exercises for each day.${flow?" Tap each day along the top.":""}</div>
   <div class="chips">${DAYS.map((d,i)=>`<button class="chip ${i===exDay?"on":""}" data-i="${i}">${d[0]+d.slice(1).toLowerCase()}</button>`).join("")}</div>`;
   if(rest)h+=`<div class="ex"><b>${FULL[exDay]} is a rest day</b><div class="meta">Set this day to a workout first, then you can add exercises.</div><button class="btn alt" id="cw2" style="margin-top:8px">Set up your week</button></div>`;
   else{

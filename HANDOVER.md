@@ -6,7 +6,7 @@ Nov 27, 2026
 
 Physiq is a phone-first fitness tracker. It is live at [ahmedwarwar8-oss.github.io/First-project-](https://ahmedwarwar8-oss.github.io/First-project-/) and installed on the owner's iPhone from Safari.
 
-- **What it does:** logs workouts set by set, charts lift progress, tracks body weight, water intake and progress photos, and compares two photos side by side.
+- **What it does:** logs workouts set by set, charts lift progress, tracks body weight, blood pressure, heart rate and progress photos, and compares two photos side by side.
 - **Who it is for:** one person training on a weekly split, in 12-week mesocycles with a deload week between them.
 - **How it runs:** an installable web app (PWA) in a single HTML file. It works offline, and all data stays on the phone. There is no server, account or login.
 - **Status:** working and in daily use. It started as a Claude artifact named "Progress Slider" and was turned into this app on 26–27 Nov 2026.
@@ -30,8 +30,7 @@ The app has five tabs along the bottom, plus Settings, which opens from the gear
 
 | Screen | What it does |
 | --- | --- |
-| Home | Greeting with today's date; today's workout with a Start or Continue button; water card; this week's sessions as day circles; stat cards for body weight, workouts done, photos and lifts tracked. The gear (Settings) shows only here. |
-| Water card (on Home) | Daily intake in litres with a progress bar. Buttons: +600 ml, +1 L, and Undo (removes the last amount added). A Set goal button sets the daily goal in litres (0.25–10 L, default 3 L). Resets at local midnight. |
+| Home | Greeting with today's date; today's workout with a Start or Continue button; this week's sessions as day circles; stat tiles for weight, photos and lifts tracked. The gear (Settings) shows only here. |
 | Workouts | Week and day picker, labelled "Week N of 12" and "Mesocycle N". Each exercise shows sets, reps, RIR, tempo and rest, and has weight (kg) and reps boxes per set. Shows "Last time" from the previous training week. Running total of sets and volume. |
 | Swap exercise | Searchable exercise library grouped by muscle, or type your own. Pinned header with a Back button. A swap applies from the current week onwards; earlier weeks keep their history. Reset to program undoes it from that week on. |
 | + Set / − Set | Changes the number of sets for an exercise from the current week onwards. Hidden during deload weeks. |
@@ -39,7 +38,7 @@ The app has five tabs along the bottom, plus Settings, which opens from the gear
 | Progress | Pick an exercise to see a chart and table of average volume per set (kg × reps) by week. Deload weeks are left out. |
 | Weight | Log body weight by date, with a chart and a list showing the change between entries. |
 | Photos | Gallery with + Add photos (resized to 1600 px JPEG). Tap a photo to edit its label and date or delete it. Select to compare: pick two photos, then Compare selected opens a before/after slider (older on the left), with Swap sides and Pick other photos. |
-| Settings | Water goal, Set up your week, Edit exercises, Backup & restore, and a note that all data stays on the device. |
+| Settings | Set up your week, Edit exercises, Backup & restore, and a note that all data stays on the device. |
 | First launch | A new user sees "Welcome to Physiq" with Set up my plan (two steps: training days, then exercises) or Use the default plan. |
 | Backup & restore | Back up saves everything (photos included) to a `physiq-backup-YYYY-MM-DD.json` file through the iPhone share sheet (Save to Files). Restore loads a backup after a confirmation and replaces all current data. Shows when the last backup was made. |
 
@@ -52,7 +51,7 @@ The whole app is one HTML file with plain JavaScript and CSS: no framework, no b
 | File | Purpose |
 | --- | --- |
 | `index.html` | The entire app: layout, styles and code |
-| `sw.js` | Service worker. Network first, falls back to cache when offline. Holds `VERSION` (now `progress-v35`) |
+| `sw.js` | Service worker. Network first, falls back to cache when offline. Holds `VERSION` (now `progress-v36`) |
 | `manifest.webmanifest` | App name (Physiq), colours (accent `#e8412c`), icons, standalone display |
 | `icons/` | Home-screen icons: 180 px Apple icon, 192 and 512 px, and a 512 px maskable icon |
 | `README.md` | Setup, hosting and install instructions |
@@ -72,7 +71,6 @@ The whole app is one HTML file with plain JavaScript and CSS: no framework, no b
 | `_plan`, `_sched` | Current exercises per session, and which session falls on which weekday |
 | `_meta` | Current running week number |
 | `bw\|<date>` | Body-weight entry in kg |
-| `water\|<date>`, `_water` | Day's water total plus a list of additions (for Undo); the daily goal in ml |
 | `_onb`, `_backup` | First-launch done flag; time of the last backup |
 
 **Weeks and mesocycles.** The week is a single running counter. A mesocycle is 12 training weeks only; the deload week sits between mesocycles and is not counted as part of one. Internally the counter runs in 13-week cycles (12 training + 1 deload). Swaps and set changes are stored with the week they start from, so they carry forward without rewriting earlier weeks.
@@ -99,6 +97,7 @@ The app went through 23 updates over two days, from the original artifact to Phy
 
 | Date (2026) | Change |
 | --- | --- |
+| 28 Nov | Water tracker removed |
 | 27 Nov | First-time plan setup, and a new plan offered at each mesocycle |
 | 27 Nov | 12-week mesocycles with a deload week |
 | 27 Nov | Backup and restore in Settings |
@@ -141,5 +140,4 @@ The first three protect the data and the live site; the rest are optional improv
 - [ ] Test the newest features on the phone: backup and restore, the deload prompt, new-plan setup
 - [ ] Reinstall the app to get the Physiq icon (back up first, then restore)
 - [ ] Merge the working branch into `main` and point GitHub Pages at `main`
-- [ ] Optional: weekly water intake chart (requested, then put on hold)
 - [ ] Optional: backup reminder on Home if the last backup is more than 7 days old

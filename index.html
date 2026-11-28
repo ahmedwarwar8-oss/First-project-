@@ -154,10 +154,6 @@ body{min-height:0;padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
 .htd h3{font-size:clamp(17px,calc(3.4vh - 2px),24px);margin:2px 0}
 .htd .btn{width:auto;padding:clamp(9px,calc(2.4vh - 4px),15px) 22px;flex:0 0 auto}
 .hm .meta{margin:0;font-size:clamp(12px,1.75vh,14px)}
-.hwt .exh b:first-child{font-size:clamp(16px,2.3vh,19px)}
-.hwt .exh span>b{font-size:clamp(17px,calc(4vh - 5px),26px)}
-.hwt .wbar{height:clamp(7px,calc(1.6vh - 2px),12px);margin:clamp(7px,calc(2.4vh - 6px),15px) 0}
-.hm .wbtns .chip{padding:clamp(6px,calc(2.3vh - 7px),13px) 0;font-size:clamp(13px,1.95vh,16px)}
 .hm .exh>b{font-size:clamp(16px,2.3vh,19px)}
 .hm .days{margin-top:clamp(5px,calc(2vh - 6px),13px)}
 .hm .dd{font-size:clamp(11px,1.6vh,13px)}
@@ -167,10 +163,6 @@ body{min-height:0;padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
 .hm .stat .v{font-size:clamp(19px,calc(4.4vh - 6px),30px);margin:2px 0}
 .hm .stat .v small{font-size:12px;font-weight:600}
 .hm .stat .l{font-size:clamp(11.5px,1.7vh,13.5px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wbar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:10px 0}
-.wbar div{height:100%;background:#2b8fd6;border-radius:6px;transition:width .3s}
-.wbtns{display:flex;gap:8px}
-.wbtns .chip{flex:1;text-align:center}
 .chip:disabled{opacity:.4}
 .shd{position:sticky;top:-16px;margin:-16px -16px 0;padding:16px 16px 8px;background:var(--bg);z-index:1}
 .shr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
@@ -623,7 +615,6 @@ function renderHome(m){
   <div class="ex htd"><div><div class="meta">TODAY</div><h3>${ss.t}</h3>
   <div class="meta">${rest?(sid==="REST"?"Recover, eat well and sleep.":"No exercises yet. Add some in Settings."):`${ss.x.length} exercises · ${nsets} sets${started?" · in progress":""}`}</div></div>
   ${rest?"":`<button class="btn" id="go">${started?"Continue":"Start"}</button>`}</div>
-${waterCard()}
   <div class="ex"><div class="exh"><b>${wkLabel(wkWeek)} <span class="meta" style="font-weight:400">· ${mesoLabel(wkWeek)}</span></b><span class="meta">${done}/${planned.length} done</span></div>
   <div class="days">${DAYS.map((d,i)=>{const s=sc[d]||"REST",st=s==="REST"?"rs":sessDone(s)?"dn":"pl";
     return `<button class="dd ${st} ${i===di?"td":""}" data-i="${i}"><span>${d[0]+d.slice(1).toLowerCase()}</span><b>${st==="dn"?"✓":st==="rs"?"R":AB[s]||"•"}</b></button>`}).join("")}</div></div>
@@ -632,7 +623,6 @@ ${waterCard()}
    <div class="stat" data-go="gal"><div class="l">Photos</div><div class="v">${photos.length}</div><div class="l">${photos.length?fmt(photos[photos.length-1].date):"Tap to add"}</div></div>
    <div class="stat" data-go="prog"><div class="l">Lifts</div><div class="v">${Object.keys(progData()).length}</div><div class="l">tracked</div></div></div>
   </div>`;
-  wireWater(m);
   const go=()=>{wkDay=di;view="wk";render()};
   if($("#go"))$("#go").onclick=go;
   m.querySelectorAll(".dd").forEach(b=>b.onclick=()=>{wkDay=+b.dataset.i;view="wk";render()});
@@ -659,33 +649,8 @@ function renderSetup(m){
   $("#sc").onclick=()=>{draft=null;view=flow?"home":"settings";flow=null;render()};
 }
 
-// ---------- water ----------
+// ---------- dates ----------
 const localDay=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
-const waterGoal=()=>logs._water&&logs._water.goal||3000;
-const litres=ml=>(Math.round(ml/50)/20).toLocaleString(undefined,{maximumFractionDigits:2})+" L";
-function waterCard(){
-  const k="water|"+localDay(),ml=logs[k]?logs[k].ml:0,g=waterGoal(),pc=Math.min(100,Math.round(ml/g*100));
-  return `<div class="ex hwt"><div class="exh"><b>Water</b><span><b>${litres(ml)}</b> <span class="meta">of ${litres(g)} · ${pc}%</span></span></div>
-  <div class="wbar"><div style="width:${pc}%"></div></div>
-  <div class="wbtns"><button class="chip" data-ml="600">+600 ml</button><button class="chip" data-ml="1000">+1 L</button><button class="chip" id="wundo" ${ml?"":"disabled"}>Undo</button><button class="chip" id="wgoal">Goal</button></div></div>`}
-async function setWaterGoal(v){const g=Math.round(Math.min(10,Math.max(0.25,num(v)||3))*1000);await wPut({k:"_water",goal:g});return g}
-function openWaterGoal(){
-  const close=()=>$("#modal").classList.remove("on");
-  $("#sheet").innerHTML=`<div class="shr"><button class="chip" id="back">‹ Back</button><h2>Daily water goal</h2></div>
-  <label>Goal (litres)</label><input type="text" inputmode="decimal" id="wgi" value="${waterGoal()/1000}" placeholder="e.g. 3.5">
-  <div class="row"><button class="btn" id="wgs">Save</button></div>`;
-  $("#modal").classList.add("on");setTimeout(()=>$("#wgi").focus(),50);
-  $("#back").onclick=close;
-  $("#wgs").onclick=async()=>{await setWaterGoal($("#wgi").value);close();render()};
-}
-function wireWater(m){
-  const d=localDay(),k="water|"+d,rec=()=>logs[k]||{k,d,ml:0,adds:[]};
-  m.querySelectorAll("[data-ml]").forEach(b=>b.onclick=async()=>{const r=rec(),n=+b.dataset.ml;
-    await wPut({k,d,ml:r.ml+n,adds:[...(r.adds||[]),n]});render()});
-  const u=m.querySelector("#wundo");if(u)u.onclick=async()=>{const r=rec(),adds=[...(r.adds||[])],last=adds.pop()||r.ml;
-    await wPut({k,d,ml:Math.max(0,r.ml-last),adds});render()};
-  const g=m.querySelector("#wgoal");if(g)g.onclick=openWaterGoal;
-}
 
 // ---------- backup & restore ----------
 const lastBackup=()=>logs._backup?"Last backup: "+new Date(logs._backup.t).toLocaleString(undefined,{day:"numeric",month:"short",year:"numeric",hour:"numeric",minute:"2-digit"}):"No backup yet.";
@@ -734,10 +699,6 @@ function renderSettings(m){
     ${row("ee",ic("#ff9500",'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>'),"Edit exercises","")}
   </div>
   <div class="sgf">${isDeload(wkWeek)?`Deload week, between Mesocycle ${mesoOf(wkWeek)} and ${mesoOf(wkWeek)+1}`:`Mesocycle ${mesoOf(wkWeek)} · ${wkLabel(wkWeek)}`}. Each mesocycle is ${MESO} training weeks; deload weeks are not counted.</div>
-  <div class="sgh">Water</div>
-  <div class="sg">
-    ${row("wgoal2",ic("#2b8fd6",'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>'),"Daily goal",litres(waterGoal()))}
-  </div>
   <div class="sgh">Data</div>
   <div class="sg">
     ${row("bkup",ic("#34c759",'<path d="M12 15V4M7 9l5-5 5 5M5 20h14"/>'),"Back up","")}
@@ -751,7 +712,6 @@ function renderSettings(m){
   </div>
   <div class="sgf">Everything stays on this device. Nothing is ever uploaded. Back up regularly so you don’t lose your data.</div>
   <div style="height:16px"></div>`;
-  $("#wgoal2").onclick=openWaterGoal;
   $("#cw").onclick=()=>{draft=null;view="setup";render()};
   $("#ee").onclick=()=>{view="editex";render()};
   $("#bk").onclick=()=>{view="home";render()};

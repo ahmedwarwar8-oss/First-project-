@@ -51,7 +51,7 @@ The whole app is one HTML file with plain JavaScript and CSS: no framework, no b
 | File | Purpose |
 | --- | --- |
 | `index.html` | The entire app: layout, styles and code |
-| `sw.js` | Service worker. Network first, falls back to cache when offline. Holds `VERSION` (now `progress-v37`) |
+| `sw.js` | Service worker. Network first, falls back to cache when offline. Holds `VERSION` (now `progress-v38`) |
 | `manifest.webmanifest` | App name (Physiq), colours (accent `#e8412c`), icons, standalone display |
 | `icons/` | Home-screen icons: 180 px Apple icon, 192 and 512 px, and a 512 px maskable icon |
 | `README.md` | Setup, hosting and install instructions |
@@ -97,6 +97,7 @@ The app went through 23 updates over two days, from the original artifact to Phy
 
 | Date (2026) | Change |
 | --- | --- |
+| 28 Nov | Camera works with a Bluetooth shutter remote (Enter, Space or volume keys) |
 | 28 Nov | Heart card on Home: latest blood pressure and resting heart rate |
 | 28 Nov | Water tracker removed |
 | 27 Nov | First-time plan setup, and a new plan offered at each mesocycle |

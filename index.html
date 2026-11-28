@@ -187,7 +187,7 @@ body{min-height:0;padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
   <div class="cbox" id="cbox"><video id="cvid" playsinline muted autoplay></video><img id="cgh" alt=""><img id="cprev" alt="" hidden>
     <svg class="cguide" id="cguide" viewBox="0 0 300 400" preserveAspectRatio="none"><line x1="0" y1="36" x2="300" y2="36"/><line x1="0" y1="378" x2="300" y2="378"/><line x1="150" y1="0" x2="150" y2="400" stroke-dasharray="6 8"/></svg><span class="glab" style="top:calc(9% - 18px)">Top of head</span><span class="glab" style="top:calc(94.5% + 3px)">Feet</span>
     <div class="ccount" id="ccount"></div></div>
-  <div class="chint" id="chint">Line up your head and feet with the guides, and your body with the ghost photo.</div>
+  <div class="chint" id="chint">Line up your head and feet with the guides, and your body with the ghost photo.<br>Bluetooth remote: press its shutter button. On two-button remotes, use the Android button.</div>
   <div class="cbot" id="cbot"><button class="shutter" id="cshot" aria-label="Take photo"></button></div>
   <div class="cbot" id="cdone" hidden><button class="btn alt" id="cre">Retake</button><button class="btn" id="csave">Save photo</button></div>
 </div>
@@ -811,7 +811,7 @@ async function openCam(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){alert("This browser can’t open the camera inside the app. Use Add from library instead.");return}
   const c=camPrefs();if(c.ghost===0&&photos.length&&!logs._cam)c.ghost=1;logs._cam=c;
   camShot=null;$("#cprev").hidden=true;$("#cvid").hidden=false;$("#cbot").hidden=false;$("#cdone").hidden=true;$("#ccount").textContent="";$("#cshot").disabled=false;
-  $("#cam").hidden=false;camUI();await camStart()}
+  $("#cam").hidden=false;if(document.activeElement)document.activeElement.blur();camUI();await camStart()}
 function camClose(){clearInterval(camTimerId);if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;$("#cam").hidden=true;$("#cvid").srcObject=null}
 function camCapture(){const v=$("#cvid"),vw=v.videoWidth,vh=v.videoHeight;if(!vw)return;
   let sw=vw,sh=vh,sx=0,sy=0;if(vw/vh>3/4){sw=vh*3/4;sx=(vw-sw)/2}else{sh=vw*4/3;sy=(vh-sh)/2}
@@ -824,9 +824,14 @@ $("#cx").onclick=camClose;
 $("#cflip").onclick=async()=>{const c=camPrefs();c.facing=c.facing==="user"?"environment":"user";await wPut(c);camUI();await camStart()};
 $("#ctimer").onclick=async()=>{const c=camPrefs();c.timer=c.timer===0?3:c.timer===3?10:0;await wPut(c);camUI()};
 $("#cghost").onclick=async()=>{const c=camPrefs(),n=Math.min(photos.length,5);c.ghost=n?(c.ghost+1)%(n+1):0;await wPut(c);camUI()};
-$("#cshot").onclick=()=>{const t=camPrefs().timer;if(!t)return camCapture();
+function camShutter(){if($("#cam").hidden||camShot||$("#cshot").disabled)return;const t=camPrefs().timer;if(!t)return camCapture();
   let n=t;$("#cshot").disabled=true;$("#ccount").textContent=n;
-  camTimerId=setInterval(()=>{n--;if(n>0){$("#ccount").textContent=n;return}clearInterval(camTimerId);$("#ccount").textContent="";$("#cshot").disabled=false;camCapture()},1000)};
+  camTimerId=setInterval(()=>{n--;if(n>0){$("#ccount").textContent=n;return}clearInterval(camTimerId);$("#ccount").textContent="";$("#cshot").disabled=false;camCapture()},1000)}
+$("#cshot").onclick=camShutter;
+// Bluetooth shutter remotes act as keyboards: most send Enter or Volume Up; some send Space.
+const REMOTE_KEYS=["Enter","NumpadEnter"," ","Spacebar","AudioVolumeUp","AudioVolumeDown","VolumeUp","VolumeDown","Camera"];
+document.addEventListener("keydown",e=>{if($("#cam").hidden)return;
+  if(REMOTE_KEYS.includes(e.key)||[13,32,174,175].includes(e.keyCode)){e.preventDefault();if(!e.repeat)camShutter()}});
 $("#cre").onclick=()=>{camShot=null;$("#cprev").hidden=true;$("#cvid").hidden=false;$("#cbot").hidden=false;$("#cdone").hidden=true;camUI()};
 $("#csave").onclick=async()=>{if(!camShot)return;const n=photos.length+1;
   await pPut({id:Date.now(),date:localDay(),label:"Week "+n,data:camShot});camClose();view="gal";await load()};

@@ -40,7 +40,8 @@ The app has five tabs along the bottom, plus Settings, which opens from the gear
 | Photos | Gallery with + Add photos (resized to 1600 px JPEG). Tap a photo to edit its label and date or delete it. Select to compare: pick two photos, then Compare selected opens a before/after slider (older on the left), with Swap sides and Pick other photos. |
 | Settings | Set up your week, Edit exercises, Backup & restore, and a note that all data stays on the device. |
 | First launch | A new user sees "Welcome to Physiq" with Set up my plan (two steps: training days, then exercises) or Use the default plan. |
-| Backup & restore | Back up saves everything (photos included) to a `physiq-backup-YYYY-MM-DD.json` file through the iPhone share sheet (Save to Files). Restore loads a backup after a confirmation and replaces all current data. Shows when the last backup was made. |
+| Backup & restore | Two kinds of backup: **Back up data** (workouts, plan, weight, heart readings; a few KB) and **Back up photos** (split into files of about 40 MB each so large libraries still save). Both go through the iPhone share sheet (Save to Files). Restore accepts one or several files: a data backup replaces logs and keeps photos, photo backups add photos, and older full backups still replace everything. |
+| Storage used (Settings) | Shows how much space Physiq uses out of what the browser allows, split into photos and workouts/health, and whether storage is protected from automatic clearing. |
 
 ## How it works
 
@@ -51,7 +52,7 @@ The whole app is one HTML file with plain JavaScript and CSS: no framework, no b
 | File | Purpose |
 | --- | --- |
 | `index.html` | The entire app: layout, styles and code |
-| `sw.js` | Service worker. Network first, falls back to cache when offline. Holds `VERSION` (now `progress-v41`) |
+| `sw.js` | Service worker. Network first, falls back to cache when offline. Holds `VERSION` (now `progress-v42`) |
 | `manifest.webmanifest` | App name (Physiq), colours (accent `#e8412c`), icons, standalone display |
 | `icons/` | Home-screen icons: 180 px Apple icon, 192 and 512 px, and a 512 px maskable icon |
 | `README.md` | Setup, hosting and install instructions |
@@ -71,7 +72,7 @@ The whole app is one HTML file with plain JavaScript and CSS: no framework, no b
 | `_plan`, `_sched` | Current exercises per session, and which session falls on which weekday |
 | `_meta` | Current running week number |
 | `bw\|<date>` | Body-weight entry in kg |
-| `_onb`, `_backup` | First-launch done flag; time of the last backup |
+| `_onb`, `_backup`, `_pbackup` | First-launch done flag; time of the last data backup; time of the last photo backup |
 
 **Weeks and mesocycles.** The week is a single running counter. A mesocycle is 12 training weeks only; the deload week sits between mesocycles and is not counted as part of one. Internally the counter runs in 13-week cycles (12 training + 1 deload). Swaps and set changes are stored with the week they start from, so they carry forward without rewriting earlier weeks.
 
@@ -97,6 +98,7 @@ The app went through 23 updates over two days, from the original artifact to Phy
 
 | Date (2026) | Change |
 | --- | --- |
+| 28 Nov | Storage used in Settings; backups split into data and photos |
 | 28 Nov | Workouts: RIR box for each set, shown in the Last time hint |
 | 28 Nov | Camera works with a Bluetooth shutter remote (Enter, Space or volume keys) |
 | 28 Nov | Heart card on Home: latest blood pressure and resting heart rate |
@@ -132,7 +134,7 @@ The biggest risk is data loss: everything lives on one phone, and the only copy 
 - **Public code.** The repository is public so that free GitHub Pages works. The code is visible to anyone; personal data is not, because it never leaves the phone.
 - **Working branch only.** The live site deploys from a `claude/...` branch, not `main`.
 - **Plan edits are global within a mesocycle.** Editing exercises in Settings changes the current plan for every week of the live mesocycle, including weeks already done. Past mesocycles are protected by their snapshot. Swaps carry forward properly.
-- **Backup size.** Backups include photos as images, so files grow by roughly 0.2–0.5 MB per photo.
+- **Backup size.** Photo backups grow by roughly 0.4–0.8 MB per photo; they are split into files of about 40 MB each. Data backups stay small.
 - **Deload is fixed.** It always comes after week 12 and always halves the sets. The deload prompt can be postponed ("Stay on week 12") but not skipped.
 
 ## Next steps

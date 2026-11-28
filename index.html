@@ -218,7 +218,7 @@ body{min-height:0;padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
 <main id="main"></main>
 <nav><button id="t-home"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg></i>Home</button><button id="t-wk"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg></i>Workouts</button><button id="t-stats"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg></i>Stats</button><button id="t-gal"><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v13H4z"/><circle cx="12" cy="13" r="3.5"/></svg></i>Photos</button></nav>
 <input type="file" id="file" accept="image/*" multiple style="position:fixed;left:-9999px;opacity:0">
-<input type="file" id="rfile" style="position:fixed;left:-9999px;opacity:0">
+<input type="file" id="rfile" multiple style="position:fixed;left:-9999px;opacity:0">
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 <div id="cam" hidden>
   <div class="ctop"><button class="cbtn" id="cx">Close</button><div style="display:flex;gap:6px"><button class="cbtn" id="cghost">Ghost</button><button class="cbtn" id="ctimer">Timer</button><button class="cbtn" id="cflip">Flip</button></div></div>
@@ -709,39 +709,82 @@ function renderSetup(m){
 const localDay=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 
 // ---------- backup & restore ----------
-const lastBackup=()=>logs._backup?"Last backup: "+new Date(logs._backup.t).toLocaleString(undefined,{day:"numeric",month:"short",year:"numeric",hour:"numeric",minute:"2-digit"}):"No backup yet.";
-async function backup(){
-  const msg=$("#bkmsg");msg.textContent="Preparing backup…";
-  try{
-    await wPut({k:"_backup",t:Date.now()});
-    const data={app:"physiq",version:1,created:new Date().toISOString(),photos:await pAll(),logs:await wAll()};
-    const name="physiq-backup-"+localDay()+".json",file=new File([JSON.stringify(data)],name,{type:"application/json"});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share({files:[file],title:"Physiq backup"})}catch(e){if(e.name==="AbortError"){msg.textContent="Backup cancelled.";return}throw e}
-    }else{const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}
-    msg.textContent=lastBackup()+" · "+data.photos.length+" photos saved. Choose “Save to Files” if asked.";
-  }catch(e){msg.textContent="Backup failed. Please try again."}
-}
+// Backups come in two kinds: "data" (everything except photos, tiny) and "photos" (split into
+// parts of about 40 MB so large libraries still save reliably). Older full backups still restore.
+const PART_BYTES=40*1024*1024;
+const when=t=>new Date(t).toLocaleString(undefined,{day:"numeric",month:"short",year:"numeric",hour:"numeric",minute:"2-digit"});
+const lastBackup=()=>{const d=logs._backup,ph=logs._pbackup;
+  return `Data: ${d?when(d.t):"never backed up"} · Photos: ${ph?when(ph.t):"never backed up"}`};
+async function shareFiles(files,title){
+  if(navigator.canShare&&navigator.canShare({files})){
+    try{await navigator.share({files,title});return true}catch(e){if(e.name==="AbortError")return false;throw e}}
+  for(const file of files){const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();
+    await new Promise(r=>setTimeout(r,400));URL.revokeObjectURL(a.href);a.remove()}
+  return true}
+async function backupData(){
+  const msg=$("#bkmsg");msg.textContent="Preparing data backup…";
+  try{const logsAll=(await wAll()).filter(o=>o.k!=="_backup"&&o.k!=="_pbackup");
+    const data={app:"physiq",version:2,kind:"data",created:new Date().toISOString(),photos:[],logs:logsAll};
+    const name="physiq-data-"+localDay()+".json",file=new File([JSON.stringify(data)],name,{type:"application/json"});
+    if(!await shareFiles([file],"Physiq data backup")){msg.textContent="Backup cancelled.";return}
+    await wPut({k:"_backup",t:Date.now()});msg.textContent=lastBackup()+". Choose “Save to Files” if asked."}
+  catch(e){msg.textContent="Data backup failed. Please try again."}}
+async function backupPhotos(){
+  const msg=$("#bkmsg"),all=await pAll();
+  if(!all.length){msg.textContent="No photos to back up yet.";return}
+  msg.textContent="Preparing photo backup…";
+  try{const parts=[];let cur=[],size=0;
+    for(const ph of all){const n=(ph.data||"").length+200;if(cur.length&&size+n>PART_BYTES){parts.push(cur);cur=[];size=0}cur.push(ph);size+=n}
+    if(cur.length)parts.push(cur);
+    const day=localDay(),created=new Date().toISOString();
+    const files=parts.map((list,i)=>new File([JSON.stringify({app:"physiq",version:2,kind:"photos",created,part:i+1,parts:parts.length,photos:list,logs:[]})],
+      `physiq-photos-${day}${parts.length>1?`-part${i+1}of${parts.length}`:""}.json`,{type:"application/json"}));
+    if(!await shareFiles(files,"Physiq photo backup")){msg.textContent="Backup cancelled.";return}
+    await wPut({k:"_pbackup",t:Date.now()});
+    msg.textContent=`${lastBackup()}. ${all.length} photos in ${files.length} file${files.length>1?"s":""}. Choose “Save to Files” if asked.`}
+  catch(e){msg.textContent="Photo backup failed. Please try again."}}
 function clearStore(name){return new Promise(res=>{if(!db||!db.objectStoreNames.contains(name)){if(name==="p")mem=[];else lmem={};return res()}const q=db.transaction(name,"readwrite").objectStore(name).clear();q.onsuccess=q.onerror=()=>res()})}
 $("#rfile").onchange=async e=>{
-  const f=e.target.files[0];e.target.value="";if(!f)return;
-  const msg=$("#bkmsg");let data;
-  try{data=JSON.parse(await f.text())}catch(err){data=null}
-  if(!data||data.app!=="physiq"||!Array.isArray(data.photos)||!Array.isArray(data.logs)){if(msg)msg.textContent="That file isn’t a Physiq backup.";return}
-  const when=data.created?new Date(data.created).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}):"unknown date";
+  const fl=[...e.target.files];e.target.value="";if(!fl.length)return;
+  const msg=$("#bkmsg"),ok=[];let bad=0;
+  for(const f of fl){try{const d=JSON.parse(await f.text());if(d&&d.app==="physiq"&&Array.isArray(d.photos)&&Array.isArray(d.logs))ok.push(d);else bad++}catch(err){bad++}}
+  if(!ok.length){if(msg)msg.textContent="That file isn’t a Physiq backup.";return}
+  const full=ok.filter(d=>!d.kind).sort((x,y)=>(y.created||"").localeCompare(x.created||""))[0];
+  const dataB=ok.filter(d=>d.kind==="data").sort((x,y)=>(y.created||"").localeCompare(x.created||""))[0];
+  const photoB=ok.filter(d=>d.kind==="photos");
+  const newLogs=dataB?dataB.logs:full?full.logs:null;
+  const addPhotos=[...(full?full.photos:[]),...photoB.flatMap(d=>d.photos)];
+  const parts=photoB.length?`${photoB.length} of ${photoB[0].parts||photoB.length} photo file${photoB.length>1?"s":""}`:"";
+  const lines=[];
+  if(full)lines.push(`Full backup from ${fmt((full.created||"").slice(0,10))}: replaces everything on this phone.`);
+  else if(dataB)lines.push(`Data backup from ${fmt(dataB.created.slice(0,10))}: replaces your workouts, plan, weight and heart readings. Your photos are kept.`);
+  if(photoB.length)lines.push(`Photo backup (${parts}): adds ${photoB.reduce((n,d)=>n+d.photos.length,0)} photos. Photos already on this phone are kept.`);
+  if(photoB.length&&photoB[0].parts&&photoB.length<photoB[0].parts)lines.push("Some photo parts are missing. You can restore the other parts later.");
+  if(bad)lines.push(`${bad} file${bad>1?"s were":" was"} not a Physiq backup and will be skipped.`);
   $("#sheet").innerHTML=`<div class="shr"><button class="chip" id="back">‹ Back</button><h2>Restore backup?</h2></div>
-  <div class="meta">Backup from ${when}: ${data.photos.length} photos and ${data.logs.length} saved entries.</div>
-  <p style="color:var(--accent);font-weight:600">This replaces everything currently in the app on this phone.</p>
+  ${lines.map(l=>`<p class="meta" style="font-size:14px;color:var(--text)">${l}</p>`).join("")}
   <div class="row"><button class="btn" id="rgo">Restore</button></div>`;
   $("#modal").classList.add("on");
   const close=()=>$("#modal").classList.remove("on");
   $("#back").onclick=close;
   $("#rgo").onclick=async()=>{$("#rgo").disabled=true;$("#rgo").textContent="Restoring…";
-    await clearStore("p");await clearStore("w");
-    for(const p of data.photos)if(p&&p.id!=null)await pPut(p);
-    for(const o of data.logs)if(o&&o.k!=null)await wPut(o);
+    if(full)await clearStore("p");
+    if(newLogs){await clearStore("w");for(const o of newLogs)if(o&&o.k!=null)await wPut(o)}
+    for(const ph of addPhotos)if(ph&&ph.id!=null)await pPut(ph);
     close();location.reload()};
 };
+
+// ---------- storage used ----------
+const mb=n=>n>=1e9?(n/1e9).toFixed(1)+" GB":n>=1e6?Math.round(n/1e6)+" MB":Math.max(1,Math.round(n/1e3))+" KB";
+async function fillStorage(){
+  const v=$("#storv"),f=$("#storf");if(!v)return;
+  const ph=photos.reduce((n,x)=>n+(x.data||"").length,0),lg=JSON.stringify(Object.values(logs)).length;
+  let used=ph+lg,quota=0,kept=false;
+  try{if(navigator.storage&&navigator.storage.estimate){const e=await navigator.storage.estimate();used=e.usage||used;quota=e.quota||0}}catch(err){}
+  try{if(navigator.storage&&navigator.storage.persisted)kept=await navigator.storage.persisted()}catch(err){}
+  if(!$("#storv"))return;
+  v.textContent=quota?`${mb(used)} of ${mb(quota)}`:mb(used);
+  f.textContent=`Photos ${mb(ph)} (${photos.length}) · Workouts and health ${mb(lg)}. ${kept?"Protected from automatic clearing.":"Not yet protected from automatic clearing. Adding Physiq to your Home Screen and using it regularly helps."}`}
 
 // ---------- settings ----------
 function renderSettings(m){
@@ -757,7 +800,13 @@ function renderSettings(m){
   <div class="sgf">${isDeload(wkWeek)?`Deload week, between Mesocycle ${mesoOf(wkWeek)} and ${mesoOf(wkWeek)+1}`:`Mesocycle ${mesoOf(wkWeek)} · ${wkLabel(wkWeek)}`}. Each mesocycle is ${MESO} training weeks; deload weeks are not counted.</div>
   <div class="sgh">Data</div>
   <div class="sg">
-    ${row("bkup",ic("#34c759",'<path d="M12 15V4M7 9l5-5 5 5M5 20h14"/>'),"Back up","")}
+    <div class="srow"><span class="sl">${ic("#007aff",'<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>')}Storage used</span><span class="sv" id="storv" style="padding-right:4px">Checking…</span></div>
+  </div>
+  <div class="sgf" id="storf">Working out how much space Physiq uses…</div>
+  <div class="sgh">Backup</div>
+  <div class="sg">
+    ${row("bkup",ic("#34c759",'<path d="M12 15V4M7 9l5-5 5 5M5 20h14"/>'),"Back up data","Small")}
+    ${row("bkph",ic("#34c759",'<rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>'),"Back up photos",photos.length?`${photos.length} photos`:"")}
     ${row("rst",ic("#8e8e93",'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'),"Restore from backup","","label",'for="rfile"')}
   </div>
   <div class="sgf" id="bkmsg">${lastBackup()}</div>
@@ -771,7 +820,9 @@ function renderSettings(m){
   $("#cw").onclick=()=>{draft=null;view="setup";render()};
   $("#ee").onclick=()=>{view="editex";render()};
   $("#bk").onclick=()=>{view="home";render()};
-  $("#bkup").onclick=backup;
+  $("#bkup").onclick=backupData;
+  $("#bkph").onclick=backupPhotos;
+  fillStorage();
 }
 
 // ---------- plan editing (Settings only) ----------

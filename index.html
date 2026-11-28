@@ -73,6 +73,7 @@ h2{font-size:20px;margin:14px 0 8px}
 .set{display:flex;align-items:center;gap:8px;margin:6px 0}
 .set span{width:44px;font-size:13px;color:var(--muted)}
 .set input{flex:1;min-width:0;text-align:center}
+.set input.rir{flex:0 0 64px;margin-left:2px}
 .addset{margin-top:4px;padding:6px 12px;font-size:13px}
 .exh{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .swap{padding:4px 12px;font-size:12px}
@@ -385,11 +386,11 @@ function renderWk(m){
     const e=s.split("|"),key=`${wkWeek}|${dn}|${e[0]}`,lg=logs[key]||{sets:[]},sk=`sets|${dn}|${e[0]}`,base=atWeek(sk,wkWeek)??+e[4],planned=dl?Math.max(1,Math.ceil(base/2)):base,n=Math.max(planned,lg.sets.length);
     const name=atWeek(`sub|${dn}|${e[0]}`,wkWeek)||e[1],sub=name!==e[1];
     let prev="";for(let w=wkWeek-1;w>=1&&!prev;w--){if(isDeload(w))continue;const p=logs[`${w}|${dn}|${e[0]}`];
-      if(p&&(p.n||e[1])===name){const t=p.sets.filter(x=>num(x.r)>0).map(x=>`${x.w||0} kg × ${x.r}`).join(", ");if(t)prev=`Last time (${wkShort(w)}): ${t}`}}
+      if(p&&(p.n||e[1])===name){const t=p.sets.filter(x=>num(x.r)>0).map(x=>`${x.w||0} kg × ${x.r}${x.i!=null&&x.i!==""?` (RIR ${x.i})`:""}`).join(", ");if(t)prev=`Last time (${wkShort(w)}): ${t}`}}
     h+=`<div class="ex"><div class="exh"><h3>${esc(name)}</h3><button class="chip swap" data-d="${dn}" data-s="${e[0]}">Swap</button></div><div class="meta">${n} sets · ${e[5]} reps · RIR ${dl?"4–5":(e[7]||"3")} · Tempo ${e[2]} · Rest ${e[3]}</div>
     ${sub||!e[6]?"":`<div class="meta">${e[6]}</div>`}${prev?`<div class="hint">${prev}</div>`:""}`;
     for(let i=0;i<n;i++){const x=lg.sets[i]||{};
-      h+=`<div class="set"><span>Set ${i+1}</span><input type="text" inputmode="decimal" placeholder="kg" data-k="${key}" data-i="${i}" data-f="w" data-nm="${esc(name)}" value="${x.w??""}"><b>×</b><input type="text" inputmode="numeric" placeholder="Reps" data-k="${key}" data-i="${i}" data-f="r" data-nm="${esc(name)}" value="${x.r??""}"></div>`}
+      h+=`<div class="set"><span>Set ${i+1}</span><input type="text" inputmode="decimal" placeholder="kg" data-k="${key}" data-i="${i}" data-f="w" data-nm="${esc(name)}" value="${x.w??""}"><b>×</b><input type="text" inputmode="numeric" placeholder="Reps" data-k="${key}" data-i="${i}" data-f="r" data-nm="${esc(name)}" value="${x.r??""}"><input class="rir" type="text" inputmode="decimal" placeholder="RIR" aria-label="Reps in reserve" data-k="${key}" data-i="${i}" data-f="i" data-nm="${esc(name)}" value="${x.i??""}"></div>`}
     h+=(dl?"":`<button class="chip addset" data-sk="${sk}" data-n="${n}">+ Set</button>${n>1?`<button class="chip rmset" data-k="${key}" data-sk="${sk}" data-n="${n}">− Set</button>`:""}`)+`</div>`});
   if(d.x.length)h+=`<div class="ex"><b id="tot">${totals()}</b></div>`;
   m.innerHTML=h;

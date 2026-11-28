@@ -160,9 +160,7 @@ h1{letter-spacing:-.02em}
 .chip{transition:transform .1s}
 .hint{display:inline-block;color:var(--text);background:var(--accent-soft);border-radius:8px;padding:5px 9px;margin:6px 0 4px;font-size:12px;font-weight:500}
 .set{gap:6px;margin:5px 0;padding:3px 4px;border-radius:12px}
-.set.done{background:var(--accent-soft)}
 .set .sn{width:26px;height:26px;flex:0 0 26px;border-radius:50%;background:var(--bg);color:var(--muted);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-right:4px}
-.set.done .sn{background:var(--accent);color:#fff}
 .set b{color:var(--muted);font-weight:500}
 .set input{height:42px;padding:8px}
 .shd2{margin:10px 0 0;padding:0 4px}
@@ -431,7 +429,7 @@ function renderWk(m){
     ${sub||!e[6]?"":`<div class="meta">${e[6]}</div>`}${prev?`<div class="hint">${prev}</div>`:""}`;
     h+=`<div class="set shd2"><span></span><i>kg</i><b></b><i>Reps</i><i class="rir">RIR</i></div>`;
     for(let i=0;i<n;i++){const x=lg.sets[i]||{};
-      h+=`<div class="set ${num(x.r)>0?"done":""}"><span class="sn">${i+1}</span><input type="text" inputmode="decimal" placeholder="kg" data-k="${key}" data-i="${i}" data-f="w" data-nm="${esc(name)}" value="${x.w??""}"><b>×</b><input type="text" inputmode="numeric" placeholder="Reps" data-k="${key}" data-i="${i}" data-f="r" data-nm="${esc(name)}" value="${x.r??""}"><input class="rir" type="text" inputmode="decimal" placeholder="RIR" aria-label="Reps in reserve" data-k="${key}" data-i="${i}" data-f="i" data-nm="${esc(name)}" value="${x.i??""}"></div>`}
+      h+=`<div class="set"><span class="sn">${i+1}</span><input type="text" inputmode="decimal" placeholder="kg" data-k="${key}" data-i="${i}" data-f="w" data-nm="${esc(name)}" value="${x.w??""}"><b>×</b><input type="text" inputmode="numeric" placeholder="Reps" data-k="${key}" data-i="${i}" data-f="r" data-nm="${esc(name)}" value="${x.r??""}"><input class="rir" type="text" inputmode="decimal" placeholder="RIR" aria-label="Reps in reserve" data-k="${key}" data-i="${i}" data-f="i" data-nm="${esc(name)}" value="${x.i??""}"></div>`}
     h+=(dl?"":`<button class="chip addset" data-sk="${sk}" data-n="${n}">+ Set</button>${n>1?`<button class="chip rmset" data-k="${key}" data-sk="${sk}" data-n="${n}">− Set</button>`:""}`)+`</div>`});
   if(d.x.length)h+=`<div class="ex"><b id="tot">${totals()}</b></div>`;
   m.innerHTML=h;
